@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Pack Instructions – {{ org.name }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui;max-width:680px;margin:0 auto;padding:1rem;}
+    .card{border:1px solid #e5e7eb;border-radius:8px;padding:1rem;margin:1rem 0;}
+    .btn{display:inline-block;padding:.6rem 1rem;border-radius:6px;background:#2563eb;color:#fff;text-decoration:none;border:0;}
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body>
+  <h2>Nutrition Support Pack – Month {{ supply.month_index }}</h2>
+  <div class="card">
+    <p><strong>School:</strong> {{ org.name }}</p>
+    <p><strong>Child:</strong> {{ student.full_name }}</p>
+    {% if is_delivered %}
+      <p class="muted">Delivered on <strong>{{ supply.delivered_on }}</strong>. Your compliance check is due on <strong>{{ supply.compliance_due_at|date:"Y-m-d H:i" }}</strong>.</p>
+    {% else %}
+      <p class="muted">This pack has not been marked as delivered yet by the school/SAPA logistics.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h4>How to use</h4>
+    <ol>
+      <li>Give the daily supplement as advised by the school/pediatrician.</li>
+      <li>Keep the pack in a cool and dry place.</li>
+      <li>On Day 27, please complete the short compliance check.</li>
+    </ol>
+  </div>
+
+  <p>
+    <a class="btn" href="{% url 'program:compliance_start' %}?token={{ supply.qr_token }}">Go to Compliance Form</a>
+  </p>
+</body>
+</html>

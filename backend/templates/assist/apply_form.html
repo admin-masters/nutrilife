@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Parental Consent – {{ org.name }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:680px;margin:0 auto;padding:1rem;}
+    .card{border:1px solid #e5e7eb;border-radius:8px;padding:1rem;margin:1rem 0;}
+    label{display:block;margin:.6rem 0;}
+    input[type=text],input[type=tel]{width:100%;padding:.5rem;border:1px solid #d1d5db;border-radius:6px;}
+    .btn{display:inline-block;padding:.6rem 1rem;border-radius:6px;background:#2563eb;color:#fff;text-decoration:none;border:0;}
+    .btn-secondary{background:#6b7280}
+  </style>
+</head>
+<body>
+  <h2>Parental Consent for Monthly Nutrition Support</h2>
+  <div class="card">
+    <p><strong>School:</strong> {{ org.name }}</p>
+    <p><strong>Child:</strong> {{ student.full_name }}</p>
+    {% if existing and existing.status != 'FORWARDED' %}
+      <p style="color:#92400e;background:#fef3c7;padding:.5rem;border-radius:6px;">
+        A recent application exists (status: {{ existing.status }}). If you continue, a new submission will be recorded.
+      </p>
+    {% endif %}
+  </div>
+
+  <form method="post">{% csrf_token %}
+    <div class="card">
+      <h4>Your details</h4>
+      <label>Parent/Guardian Full Name
+        <input type="text" name="parent_full_name" value="{{ form.parent_full_name.value|default:'' }}">
+      </label>
+      <label>WhatsApp Number (+countrycode…)
+        <input type="tel" name="parent_phone_e164" value="{{ form.parent_phone_e164.value|default:'' }}">
+      </label>
+      <h4>Address (optional)</h4>
+      <label>Address line 1 <input type="text" name="address_line1"></label>
+      <label>Address line 2 <input type="text" name="address_line2"></label>
+      <label>City <input type="text" name="city"></label>
+      <label>State <input type="text" name="state"></label>
+      <label>Postal Code <input type="text" name="postal_code"></label>
+    </div>
+
+    <div class="card">
+      <h4>Consent</h4>
+      <label><input type="checkbox" name="agree_consent" required> I agree to receive monthly nutrition support for my child for up to 6 months.</label>
+      <label><input type="checkbox" name="confirm_understanding" required> I have read and understood the information shared by the school/SAPA.</label>
+    </div>
+
+    <button class="btn" type="submit">Approve Consent</button>
+    <a class="btn btn-secondary" href="https://wa.me/">Decline</a>
+  </form>
+</body>
+</html>

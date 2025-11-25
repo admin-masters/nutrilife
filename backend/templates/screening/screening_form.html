@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Screening: {{ student.full_name }}</title>
+<style>label{display:block;margin:.5rem 0}</style></head>
+<body>
+  <h3>Screening – {{ student.full_name }}</h3>
+  <form method="post">{% csrf_token %}
+    <label>Parent WhatsApp: {{ form.parent_phone_e164 }}</label>
+    <label>Gender: {{ form.gender }}</label>
+    <label>Age (years): {{ form.age_years }}</label>
+    <label>Height (cm): {{ form.height_cm }}</label>
+    <label>Weight (kg): {{ form.weight_kg }}</label>
+    <label>Low-income family? {{ form.is_low_income_at_screen }}</label>
+
+    <fieldset>
+      <legend>Questions</legend>
+      {% for field in mcq_fields %}
+        <label>{{ field.label }} {{ field }}</label>
+        {% if field.errors %}
+          <div style="color:#b00">{{ field.errors }}</div>
+        {% endif %}
+      {% endfor %}
+    </fieldset>
+
+    <button type="submit">Complete Screening</button>
+    <a href="{% url 'teacher_portal' %}">Cancel</a>
+  </form>
+</body>
+</html>

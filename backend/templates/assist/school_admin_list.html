@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Applications – {{ org.name }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui;max-width:1000px;margin:0 auto;padding:1rem;}
+    .stats{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+    .stat{border:1px solid #e5e7eb;border-radius:8px;padding:.75rem 1rem;min-width:160px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
+    .btn{display:inline-block;padding:.35rem .7rem;border:1px solid #d1d5db;border-radius:6px;text-decoration:none}
+    .btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+  </style>
+</head>
+<body>
+  <h2>{{ org.name }} – Assistance Applications</h2>
+
+  <div class="stats">
+    <div class="stat"><strong>Applied</strong><div>{{ counts.APPLIED }}</div></div>
+    <div class="stat"><strong>Forwarded</strong><div>{{ counts.FORWARDED }}</div></div>
+  </div>
+
+  <form method="get" action="">
+    <label>Filter by status:
+      <select name="status" onchange="this.form.submit()">
+        <option value="APPLIED" {% if status == 'APPLIED' %}selected{% endif %}>Applied</option>
+        <option value="FORWARDED" {% if status == 'FORWARDED' %}selected{% endif %}>Forwarded</option>
+      </select>
+    </label>
+  </form>
+
+  {% if status == 'APPLIED' and counts.APPLIED %}
+    <form method="post" action="{% url 'assist:forward_all' %}">{% csrf_token %}
+      <button class="btn btn-primary" type="submit">Forward All Pending to SAPA</button>
+    </form>
+  {% endif %}
+
+  <table style="margin-top:1rem">
+    <thead>
+      <tr>
+        <th>Applied At</th><th>Student</th><th>Parent Phone</th><th>Status</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in applications %}
+        <tr>
+          <td>{{ a.applied_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ a.student.full_name }}</td>
+          <td>{% if a.guardian %}{{ a.guardian.phone_e164 }}{% endif %}</td>
+          <td>{{ a.status }}</td>
+          <td>
+            {% if a.status == 'APPLIED' %}
+              <form method="post" action="{% url 'assist:forward_one' a.id %}">{% csrf_token %}
+                <button class="btn" type="submit">Forward</button>
+              </form>
+            {% else %}-{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No applications</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

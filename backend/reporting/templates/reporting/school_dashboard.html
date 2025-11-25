@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ org.name }} – Dashboard</title>
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:0 auto;padding:1rem}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+    .tile{border:1px solid #e5e7eb;border-radius:8px;padding:1rem}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.4rem;border-bottom:1px solid #eee;text-align:left}
+    .row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+    .btn{border:1px solid #d1d5db;border-radius:8px;padding:.5rem .8rem;text-decoration:none}
+  </style>
+</head>
+<body>
+  <h2>{{ org.name }} – Dashboard</h2>
+  <p>Period: {{ start }} → {{ end }}</p>
+
+  <div class="grid">
+    <div class="tile"><strong>Screened</strong><div>{{ agg.screened }}</div></div>
+    <div class="tile"><strong>Red flags</strong><div>{{ agg.red_flags }} ({{ agg.red_rate }}%)</div></div>
+    <div class="tile"><strong>Approved</strong><div>{{ agg.approved }}</div></div>
+    <div class="tile"><strong>Supplies delivered</strong><div>{{ agg.supplies_delivered }}</div></div>
+    <div class="tile"><strong>Compliance submitted</strong><div>{{ agg.compliance_submitted }}</div></div>
+    <div class="tile"><strong>Compliance rate</strong><div>{{ agg.compliance_rate }}%</div></div>
+    <div class="tile"><strong>Milestones overdue</strong><div>{{ agg.milestones_overdue }}</div></div>
+    <div class="tile"><strong>Enrollments</strong><div>{{ agg.enrollments_created }}</div></div>
+  </div>
+
+  <div class="row" style="margin-top:1rem">
+    <a class="btn" href="{% url 'reporting:export_school_csv' %}?start={{ start }}&end={{ end }}">Download Report (CSV)</a>
+    {% if report_status.next_due_on %}
+      <div class="tile">Next 6‑month report due: <strong>{{ report_status.next_due_on }}</strong></div>
+    {% endif %}
+  </div>
+
+  <h3>30‑day Screenings Trend</h3>
+  <table>
+    <thead><tr><th>Date</th><th>Screened</th><th>Red flags</th></tr></thead>
+    <tbody>
+      {% for r in trend %}
+        <tr><td>{{ r.day }}</td><td>{{ r.screened }}</td><td>{{ r.red_flags }}</td></tr>
+      {% empty %}
+        <tr><td colspan="3">No data</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Inditech – {{ org.name }}</title>
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:0 auto;padding:1rem}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+    .tile{border:1px solid #e5e7eb;border-radius:8px;padding:1rem}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.4rem;border-bottom:1px solid #eee;text-align:left}
+    .btn{border:1px solid #d1d5db;border-radius:8px;padding:.4rem .7rem;text-decoration:none}
+  </style>
+</head>
+<body>
+  <h2>{{ org.name }} – Screening Performance</h2>
+  <p>Period: {{ start }} → {{ end }} | Next due: {{ report_status.next_due_on|default:"—" }} | Last sent: {{ report_status.last_sent_at|date:"Y-m-d H:i"|default:"—" }}</p>
+
+  <div class="grid">
+    <div class="tile"><strong>Screened</strong><div>{{ agg.screened }}</div></div>
+    <div class="tile"><strong>Red flags</strong><div>{{ agg.red_flags }} ({{ agg.red_rate }}%)</div></div>
+    <div class="tile"><strong>Approved</strong><div>{{ agg.approved }}</div></div>
+    <div class="tile"><strong>Compliance</strong><div>{{ agg.compliance_rate }}%</div></div>
+    <div class="tile"><strong>Delivered</strong><div>{{ agg.supplies_delivered }}</div></div>
+    <div class="tile"><strong>Milestones overdue</strong><div>{{ agg.milestones_overdue }}</div></div>
+  </div>
+
+  <p style="margin-top:1rem">
+    <a class="btn" href="{% url 'reporting:inditech_export_school_csv' org.id %}">Download performance report (CSV)</a>
+  </p>
+
+  <h3>30‑day Screenings Trend</h3>
+  <table>
+    <thead><tr><th>Date</th><th>Screened</th><th>Red flags</th></tr></thead>
+    <tbody>
+      {% for r in trend %}
+        <tr><td>{{ r.day }}</td><td>{{ r.screened }}</td><td>{{ r.red_flags }}</td></tr>
+      {% empty %}
+        <tr><td colspan="3">No data</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

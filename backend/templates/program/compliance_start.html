@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Compliance Check</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui;max-width:680px;margin:0 auto;padding:1rem;}
+    .note{background:#eef2ff;color:#3730a3;padding:.75rem;border-radius:8px;margin:.75rem 0;}
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body>
+  <h2>Compliance Check – Month {{ supply.month_index }}</h2>
+  {% if not supplied_on %}
+  {% endif %}
+  <p class="muted">Delivered on: {{ delivered_on|default:"(pending logistics)" }}</p>
+  <p class="muted">Due on: {{ due|date:"Y-m-d H:i" }}</p>
+
+  <div class="note">
+    This is a placeholder page for Sprint 5. The actual compliance form and submission will be implemented in <strong>Sprint 6</strong>.
+  </div>
+
+  <p>You may close this page for now. We will remind you again on Day 27.</p>
+</body>
+</html>

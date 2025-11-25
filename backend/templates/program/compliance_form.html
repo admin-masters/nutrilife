@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Monthly Compliance – {{ supply.enrollment.student.full_name }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui;max-width:680px;margin:0 auto;padding:1rem}
+    .card{border:1px solid #e5e7eb;border-radius:8px;padding:1rem;margin:1rem 0}
+    .btn{padding:.6rem 1rem;border-radius:8px;background:#2563eb;color:#fff;border:0}
+    label{display:block;margin:.5rem 0}
+    textarea{width:100%;min-height:100px}
+  </style>
+</head>
+<body>
+  <h2>Monthly Compliance – Month {{ supply.month_index }} of 6</h2>
+  <div class="card">
+    <p><strong>Child:</strong> {{ supply.enrollment.student.full_name }}</p>
+    <p><strong>Delivered on:</strong> {{ delivered_on|default:"(pending logistics)" }}</p>
+    <p><strong>Due:</strong> {{ due|date:"Y-m-d H:i" }}</p>
+  </div>
+
+  <form method="post">{% csrf_token %}
+    <div class="card">
+      <h3>Were you able to give the supplement daily (or almost daily)?</h3>
+      {{ form.status }}
+    </div>
+    <div class="card">
+      <label>{{ form.notes.label }}</label>
+      {{ form.notes }}
+    </div>
+    <button class="btn" type="submit">Submit</button>
+  </form>
+</body>
+</html>

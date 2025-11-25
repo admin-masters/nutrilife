@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Result – {{ s.student.full_name }}</title></head>
+<body>
+  {% if messages %}
+    <ul>
+      {% for m in messages %}<li>{{ m }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <h3>Result: {{ s.risk_level }}</h3>
+  <p><strong>Red flags:</strong> {{ s.red_flags|join:", " }} {% if not s.red_flags %}none{% endif %}</p>
+
+  {% if s.risk_level == "RED" %}
+    {% if s.student.primary_guardian and s.student.primary_guardian.phone_e164 %}
+      <p>
+        <a href="{% url 'send_education' s.id %}">Send education message</a>
+        {% if s.is_low_income_at_screen or s.student.is_low_income %}
+          &nbsp;|&nbsp;
+          <a href="{% url 'send_assistance' s.id %}">Send assistance invitation</a>
+        {% endif %}
+      </p>
+    {% else %}
+      <p><em>No parent WhatsApp number on file. Go back and add it.</em></p>
+    {% endif %}
+  {% else %}
+    <p>No red flags detected. You can proceed to the next student.</p>
+  {% endif %}
+
+  <p><a href="{% url 'teacher_portal' %}">Back to Teacher Portal</a></p>
+</body>
+</html>

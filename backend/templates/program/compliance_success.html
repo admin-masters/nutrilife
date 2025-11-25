@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Thank you</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>body{font-family:system-ui;max-width:680px;margin:0 auto;padding:1rem}.pill{background:#ecfdf5;color:#065f46;padding:.6rem 1rem;border-radius:9999px;display:inline-block}</style>
+</head>
+<body>
+  <h2 class="pill">Thanks for your response!</h2>
+  {% if comp %}
+    <p>Status recorded: <strong>{{ comp.status }}</strong></p>
+  {% endif %}
+  <p>Your school will continue your child’s supply if eligible.</p>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SAPA – Approvals & Batching</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:0 auto;padding:1rem;}
+    .row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+    select,input,button{padding:.5rem;border:1px solid #d1d5db;border-radius:6px}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
+    .pill{display:inline-block;padding:.25rem .5rem;border-radius:9999px;background:#eef2ff;color:#3730a3}
+    .btn{padding:.5rem .8rem;border:1px solid #d1d5db;border-radius:6px;text-decoration:none}
+    .btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+    .btn-danger{background:#b91c1c;border-color:#b91c1c;color:#fff}
+  </style>
+</head>
+<body>
+  <h2>SAPA Approvals</h2>
+
+  <form class="row" method="get" action="">
+    <label>School:
+      <select name="school" onchange="this.form.submit()">
+        <option value="">Choose a school…</option>
+        {% for s in schools %}
+          <option value="{{ s.id }}" {% if selected_school and s.id == selected_school.id %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% if selected_school %}
+      <span class="pill">Approved: {{ approved_count }}</span>
+    {% endif %}
+  </form>
+
+  {% if selected_school %}
+  <div class="row" style="margin-top:1rem">
+    <form method="post" action="{% url 'assist:sapa_approve_all' %}">{% csrf_token %}
+      <input type="hidden" name="school_id" value="{{ selected_school.id }}">
+      <button class="btn btn-primary" type="submit">Approve ALL Pending</button>
+    </form>
+
+    <form method="post" action="{% url 'assist:sapa_approve_top_n' %}">{% csrf_token %}
+      <input type="hidden" name="school_id" value="{{ selected_school.id }}">
+      <input type="number" min="1" name="n" placeholder="Top N" required>
+      <button class="btn btn-primary" type="submit">Approve Top‑N (alphabetic)</button>
+    </form>
+
+    <form method="post" action="{% url 'assist:sapa_reject_all' %}">{% csrf_token %}
+      <input type="hidden" name="school_id" value="{{ selected_school.id }}">
+      <button class="btn btn-danger" type="submit" onclick="return confirm('Reject ALL pending?')">Reject ALL Pending</button>
+    </form>
+  </div>
+
+  <table>
+    <thead><tr><th>Student</th><th>Parent Phone</th><th>Applied</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for a in pending %}
+      <tr>
+        <td>{{ a.student.full_name }}</td>
+        <td>{% if a.guardian %}{{ a.guardian.phone_e164 }}{% endif %}</td>
+        <td>{{ a.applied_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ a.status }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">No pending applications.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if request.GET.ok %}
+    <p class="pill" style="margin-top:1rem">
+      Done: {{ request.GET.ok }} (n={{ request.GET.n|default:"0" }})
+      {% if request.GET.skipped %} • skipped={{ request.GET.skipped }}{% endif %}
+    </p>
+  {% endif %}
+</body>
+</html>

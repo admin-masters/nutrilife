@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SAPA – Milestones</title>
+  <style>
+    body{font-family:system-ui;max-width:1000px;margin:0 auto;padding:1rem}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
+  </style>
+</head>
+<body>
+  <h2>SAPA – Milestones Overview</h2>
+  <table>
+    <thead><tr><th>School</th><th>Overdue</th><th>Due</th><th>Completed</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.enrollment__organization__name }}</td>
+        <td>{{ r.overdue }}</td>
+        <td>{{ r.due }}</td>
+        <td>{{ r.completed }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No data</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

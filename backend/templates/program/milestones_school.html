@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Milestones – {{ org.name }}</title>
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:0 auto;padding:1rem}
+    .stats{display:flex;gap:1rem;flex-wrap:wrap;margin:.5rem 0}
+    .stat{border:1px solid #e5e7eb;border-radius:8px;padding:.75rem 1rem;min-width:160px}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
+    .warn{background:#fef3c7;border:1px solid #f59e0b;color:#92400e;padding:.7rem;border-radius:8px}
+    .err{background:#fee2e2;border:1px solid #ef4444;color:#991b1b;padding:.7rem;border-radius:8px}
+  </style>
+</head>
+<body>
+  <h2>{{ org.name }} – Screening Milestones</h2>
+
+  {% if suspended %}
+  <div class="err">
+    <strong>Access suspended:</strong> {{ reason }}<br>
+    Please complete overdue milestones to restore access.
+  </div>
+  {% endif %}
+
+  <div class="stats">
+    <div class="stat"><strong>Due in ≤14 days</strong><div>{{ counts.due }}</div></div>
+    <div class="stat"><strong>Overdue</strong><div>{{ counts.overdue }}</div></div>
+    <div class="stat"><strong>Completed</strong><div>{{ counts.completed }}</div></div>
+  </div>
+
+  <h3>Overdue</h3>
+  <table>
+    <thead><tr><th>Student</th><th>Milestone</th><th>Due on</th></tr></thead>
+    <tbody>
+    {% for m in overdue_list %}
+      <tr><td>{{ m.enrollment.student.full_name }}</td><td>{{ m.milestone }}</td><td>{{ m.due_on }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">None 🎉</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Due soon (≤14 days)</h3>
+  <table>
+    <thead><tr><th>Student</th><th>Milestone</th><th>Due on</th></tr></thead>
+    <tbody>
+    {% for m in due_list %}
+      <tr><td>{{ m.enrollment.student.full_name }}</td><td>{{ m.milestone }}</td><td>{{ m.due_on }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">No upcoming milestones within 14 days.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
