@@ -11,7 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-unsafe")
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+#ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+ALLOWED_HOSTS=["*"]
 
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
 
@@ -74,10 +75,15 @@ ASGI_APPLICATION = "nutrilift.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("MYSQL_DATABASE", "nutrilift"),
-        "USER": os.getenv("MYSQL_USER", "nutrilift"),
-        "PASSWORD": os.getenv("MYSQL_PASSWORD", "nutrilift"),
-        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+        # "NAME": os.getenv("MYSQL_DATABASE", "nutrilift"),
+        "NAME": "nutrilife",
+
+        # "USER": os.getenv("MYSQL_USER", "nutrilift"),
+        "USER": "root",
+        #"PASSWORD": os.getenv("MYSQL_PASSWORD", "nutrilift"),
+        "PASSWORD": "c76r&R",
+        #"HOST": os.getenv("DB_HOST", "127.0.0.1"),
+        "HOST": "localhost",
         "PORT": int(os.getenv("DB_PORT", "3306")),
         "OPTIONS": {
             "charset": "utf8mb4",
