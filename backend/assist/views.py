@@ -10,7 +10,9 @@ from roster.models import Student, Guardian
 from screening.models import Screening
 from .models import Application
 from .forms import ParentConsentForm
-import re
+from datetime import datetime, date
+import calendar
+
 
 # ---------- Public parent application (consent) ----------
 def assist_apply(request):
@@ -82,28 +84,127 @@ def assist_thanks(request):
 
 
 # ---------- School Admin dashboard + actions ----------
+# backend/assist/views.py (helpers, above school_app_dashboard)
+def _month_delta(d: date, months: int) -> date:
+    """Return date shifted by `months` (can be negative), clamped to month end."""
+    y = d.year + (d.month - 1 + months) // 12
+    m = (d.month - 1 + months) % 12 + 1
+    last = calendar.monthrange(y, m)[1]
+    return date(y, m, min(d.day, last))
+
+def _period_bounds(key: str):
+    """
+    key in {'3m','6m','12m','18m','all'} → (start_dt_or_None, end_dt)
+    If 'all', returns (None, now).
+    """
+    key = (key or "3m").lower()
+    now = timezone.now()
+    if key == "all":
+        return None, now
+    months = {"3m": -3, "6m": -6, "12m": -12, "18m": -18}.get(key, -3)
+    start_day = _month_delta(now.date(), months)
+    tz = timezone.get_current_timezone()
+    start_dt = timezone.make_aware(datetime.combine(start_day, datetime.min.time()), tz)
+    return start_dt, now
+
+# backend/assist/views.py (replace the function body of school_app_dashboard)
 @require_roles(Role.ORG_ADMIN, allow_superuser=True)
 def school_app_dashboard(request):
     org = request.org
     if not org:
         return HttpResponseForbidden("Organization context required.")
 
+    # Existing table filter by status (unchanged)
     q_status = request.GET.get("status", "APPLIED")
-    qs = Application.objects.filter(organization=org)
+    app_qs = Application.objects.filter(organization=org)
     counts = {
-        "APPLIED": qs.filter(status=Application.Status.APPLIED).count(),
-        "FORWARDED": qs.filter(status=Application.Status.FORWARDED).count(),
+        "APPLIED": app_qs.filter(status=Application.Status.APPLIED).count(),
+        "FORWARDED": app_qs.filter(status=Application.Status.FORWARDED).count(),
     }
     if q_status in ("APPLIED", "FORWARDED"):
-        qs = qs.filter(status=q_status)
+        app_qs = app_qs.filter(status=q_status)
+    applications = app_qs.select_related("student", "guardian").order_by("-applied_at")[:500]
 
-    applications = qs.select_related("student", "guardian").order_by("-applied_at")[:500]
+    # NEW: period filter for the summary metrics
+    period = request.GET.get("period", "3m")
+    start_dt, end_dt = _period_bounds(period)
+
+    # Base screening queryset (optionally windowed)
+    screenings = Screening.objects.filter(organization=org)
+    if start_dt:
+        screenings = screenings.filter(screened_at__range=(start_dt, end_dt))
+
+    # Distinct-student screening counts
+    screened_distinct = screenings.values_list("student_id", flat=True).distinct()
+    total_screened = screened_distinct.count()
+    total_redflag = (
+        screenings.filter(risk_level=Screening.RiskLevel.RED)
+        .values_list("student_id", flat=True)
+        .distinct()
+        .count()
+    )
+    boys_screened = (
+        screenings.filter(student__gender="M")
+        .values_list("student_id", flat=True)
+        .distinct()
+        .count()
+    )
+    boys_redflag = (
+        screenings.filter(student__gender="M", risk_level=Screening.RiskLevel.RED)
+        .values_list("student_id", flat=True)
+        .distinct()
+        .count()
+    )
+    girls_screened = (
+        screenings.filter(student__gender="F")
+        .values_list("student_id", flat=True)
+        .distinct()
+        .count()
+    )
+    girls_redflag = (
+        screenings.filter(student__gender="F", risk_level=Screening.RiskLevel.RED)
+        .values_list("student_id", flat=True)
+        .distinct()
+        .count()
+    )
+
+    # Applications metrics in the window
+    apps = Application.objects.filter(organization=org)
+    if start_dt:
+        applications_pending = apps.filter(
+            status=Application.Status.FORWARDED,
+            forwarded_at__range=(start_dt, end_dt),
+        ).count()
+        applications_approved = apps.filter(
+            status=Application.Status.APPROVED,
+            forwarded_at__range=(start_dt, end_dt),  # cohort based on when they were sent
+        ).count()
+    else:
+        # 'All' means unbounded
+        applications_pending = apps.filter(status=Application.Status.FORWARDED).count()
+        applications_approved = apps.filter(status=Application.Status.APPROVED).count()
+
+    summary = {
+        "total_students": Student.objects.filter(organization=org).count(),  # not windowed
+        "total_screened": total_screened,
+        "total_redflag": total_redflag,
+        "applications_pending": applications_pending,
+        "applications_approved": applications_approved,
+        "boys_screened": boys_screened,
+        "boys_redflag": boys_redflag,
+        "girls_screened": girls_screened,
+        "girls_redflag": girls_redflag,
+    }
+
     return render(request, "assist/school_admin_list.html", {
         "org": org,
         "applications": applications,
-        "counts": counts,
+        "counts": counts,   # keep existing keys to avoid breaking template conditionals
         "status": q_status,
+        "period": period,
+        "summary": summary,
     })
+
 
 @require_roles(Role.ORG_ADMIN, allow_superuser=True)
 def forward_all(request):

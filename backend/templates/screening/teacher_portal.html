@@ -9,6 +9,12 @@
 </head>
 <body>
   <h2>Teacher Portal</h2>
+  <p>
+    <a href="{% url 'teacher_add_student' %}{% if selected_classroom %}?classroom={{ selected_classroom }}{% endif %}">
+      + Add student
+    </a>
+  </p>
+  
   <form method="get" action=".">
     <label>Classroom:
       <select name="classroom">

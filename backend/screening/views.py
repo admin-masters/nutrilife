@@ -20,6 +20,12 @@ from messaging.services import send_redflag_education, send_redflag_assistance
 from roster.models import Guardian
 from .models import Screening 
 
+# near top with other imports
+from django.db import transaction, IntegrityError
+from django.shortcuts import render
+from .forms import AddStudentForm  # add AddStudentForm
+
+
 def _org_required(request):
     return getattr(request, "org", None) is not None
 
@@ -171,3 +177,102 @@ def send_assistance(request, screening_id):
     log = send_redflag_assistance(s)
     messages.success(request, f"Assistance message queued → status {log.status}.")
     return redirect("screening_result", screening_id=s.id)
+
+# Add somewhere near other helpers in this file
+def _generate_student_code(org) -> str:
+    """
+    Generate a short numeric code unique within the organization.
+    Keep it simple; retry a few times on collision.
+    """
+    import random
+    for _ in range(15):
+        code = "".join(random.choices("0123456789", k=6))
+        if not Student.objects.filter(organization=org, student_code=code).exists():
+            return code
+    # Fallback – extremely unlikely to be needed
+    raise ValueError("Could not generate a unique student code. Please enter one manually.")
+
+@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+def teacher_add_student(request):
+    # Ensure org context is present
+    if not getattr(request, "org", None):
+        return HttpResponseForbidden("Organization context required.")
+    org = request.org
+
+    # Prefill grade/division if teacher clicked from a classroom filter
+    initial = {}
+    classroom_id = request.GET.get("classroom")
+    if classroom_id:
+        c = Classroom.objects.filter(id=classroom_id, organization=org).first()
+        if c:
+            initial["grade"] = c.grade
+            initial["division"] = c.division
+
+    if request.method == "POST":
+        form = AddStudentForm(request.POST, organization=org)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Guardian: reuse if phone exists in this org, else create
+                    g_phone = form.cleaned_data["guardian_phone_e164"]
+                    guardian, created_guardian = Guardian.objects.get_or_create(
+                        organization=org, phone_e164=g_phone,
+                        defaults={
+                            "full_name": form.cleaned_data["guardian_full_name"],
+                            "whatsapp_opt_in": form.cleaned_data.get("whatsapp_opt_in", True),
+                            "preferred_language": form.cleaned_data.get("preferred_language") or "en",
+                        }
+                    )
+                    # Optionally refresh guardian fields (without clobbering intentionally set values)
+                    updates = []
+                    if not guardian.full_name and form.cleaned_data["guardian_full_name"]:
+                        guardian.full_name = form.cleaned_data["guardian_full_name"]; updates.append("full_name")
+                    pref_lang = form.cleaned_data.get("preferred_language") or "en"
+                    if guardian.preferred_language != pref_lang:
+                        guardian.preferred_language = pref_lang; updates.append("preferred_language")
+                    if form.cleaned_data.get("whatsapp_opt_in") and not guardian.whatsapp_opt_in:
+                        guardian.whatsapp_opt_in = True; updates.append("whatsapp_opt_in")
+                    if updates:
+                        guardian.save(update_fields=updates)
+
+                    # Classroom: reuse existing or create new (unique_together handles duplicates)
+                    classroom, _ = Classroom.objects.get_or_create(
+                        organization=org,
+                        grade=form.cleaned_data["grade"].strip(),
+                        division=(form.cleaned_data.get("division") or "").strip(),
+                    )
+
+                    # Student code: generate if blank
+                    code = (form.cleaned_data.get("student_code") or "").strip() or _generate_student_code(org)
+
+                    # Create the student
+                    student = Student.objects.create(
+                        organization=org,
+                        classroom=classroom,
+                        first_name=form.cleaned_data["first_name"].strip(),
+                        last_name=(form.cleaned_data.get("last_name") or "").strip(),
+                        gender=form.cleaned_data["gender"],
+                        dob=form.cleaned_data.get("dob"),
+                        is_low_income=form.cleaned_data.get("is_low_income", False),
+                        student_code=code,
+                        primary_guardian=guardian,
+                    )
+
+                messages.success(request, f"Student “{student.full_name}” created.")
+                audit_log(
+                    request.user, org,
+                    action="teacher_add_student",
+                    target=student,
+                    payload={"guardian_id": guardian.id},
+                    request=request
+                )
+                # Go straight to screening for this new student
+                return redirect("screening_create", student_id=student.id)
+
+            except (IntegrityError, ValueError) as e:
+                messages.error(request, f"Could not create student: {e}")
+
+    else:
+        form = AddStudentForm(organization=org, initial=initial)
+
+    return render(request, "screening/add_student.html", {"form": form})

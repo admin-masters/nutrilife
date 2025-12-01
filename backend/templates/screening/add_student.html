@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Add student</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    fieldset{margin:1rem 0;padding:1rem;border:1px solid #ccc}
+    label{display:block;margin:.5rem 0}
+    .errors{color:#b00;margin:.5rem 0}
+  </style>
+</head>
+<body>
+  <h3>Add student</h3>
+
+  {% if form.non_field_errors %}
+    <div class="errors">
+      {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post">{% csrf_token %}
+    <fieldset>
+      <legend>Guardian</legend>
+      <label>Full name {{ form.guardian_full_name }}</label>
+      <label>WhatsApp (+countrycode…) {{ form.guardian_phone_e164 }}</label>
+      <label>Preferred language {{ form.preferred_language }}</label>
+      <label>WhatsApp opt-in {{ form.whatsapp_opt_in }}</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Classroom</legend>
+      <label>Grade {{ form.grade }}</label>
+      <label>Division {{ form.division }}</label>
+      <p style="font-size:.9rem;color:#555">
+        If a classroom with this Grade/Division already exists, the student will be added to it.
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Student</legend>
+      <label>First name {{ form.first_name }}</label>
+      <label>Last name {{ form.last_name }}</label>
+      <label>Gender {{ form.gender }}</label>
+      <label>Date of birth {{ form.dob }}</label>
+      <label>Low income {{ form.is_low_income }}</label>
+      <label>Student code {{ form.student_code }}</label>
+      <p style="font-size:.9rem;color:#555">
+        Leave Student code empty to auto-generate a unique code for your school.
+      </p>
+    </fieldset>
+
+    <button type="submit">Create & start screening</button>
+    <a href="{% url 'teacher_portal' %}">Cancel</a>
+  </form>
+</body>
+</html>

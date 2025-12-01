@@ -17,10 +17,32 @@
 <body>
   <h2>{{ org.name }} – Assistance Applications</h2>
 
-  <div class="stats">
-    <div class="stat"><strong>Applied</strong><div>{{ counts.APPLIED }}</div></div>
-    <div class="stat"><strong>Forwarded</strong><div>{{ counts.FORWARDED }}</div></div>
-  </div>
+    <form method="get" action="" class="row" style="margin:.5rem 0 1rem 0">
+        <label><strong>Filter</strong>&nbsp;
+          <select name="period" onchange="this.form.submit()">
+            <option value="3m"  {% if period == '3m' %}selected{% endif %}>Last 3 months</option>
+            <option value="6m"  {% if period == '6m' %}selected{% endif %}>Last 6 months</option>
+            <option value="12m" {% if period == '12m' %}selected{% endif %}>Last 12 months</option>
+            <option value="18m" {% if period == '18m' %}selected{% endif %}>Last 18 months</option>
+            <option value="all" {% if period == 'all' %}selected{% endif %}>All</option>
+          </select>
+        </label>
+        <!-- Preserve current table status filter value when changing period -->
+        <input type="hidden" name="status" value="{{ status }}">
+      </form>
+    
+      <div class="stats">
+        <div class="stat"><strong>Total students</strong><div>{{ summary.total_students }}</div></div>
+        <div class="stat"><strong>Total screened</strong><div>{{ summary.total_screened }}</div></div>
+        <div class="stat"><strong>Total red‑flagged</strong><div>{{ summary.total_redflag }}</div></div>
+        <div class="stat"><strong>Applications pending</strong><div>{{ summary.applications_pending }}</div></div>
+        <div class="stat"><strong>Applications approved</strong><div>{{ summary.applications_approved }}</div></div>
+        <div class="stat"><strong>Total boys screened</strong><div>{{ summary.boys_screened }}</div></div>
+        <div class="stat"><strong>Total boys red‑flagged</strong><div>{{ summary.boys_redflag }}</div></div>
+        <div class="stat"><strong>Total girls screened</strong><div>{{ summary.girls_screened }}</div></div>
+        <div class="stat"><strong>Total girls red‑flagged</strong><div>{{ summary.girls_redflag }}</div></div>
+      </div>
+      <p style="color:#6b7280;margin:.25rem 0 1rem 0">Filter applies to all tiles above except “Total students”.</p>
 
   <form method="get" action="">
     <label>Filter by status:
