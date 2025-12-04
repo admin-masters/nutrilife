@@ -1,8 +1,8 @@
 from django import forms
-from roster.models import Student, Guardian
+from roster.models import Student, Classroom
 from .models import Screening
 from django.core.exceptions import ValidationError
-
+import re
 MCQ_FIELDS = [
     ("diet_diversity_low", "Does your child eat <5 kinds of vegetables/fruits per week?"),
     ("symptom_weight_loss", "Recent unintended weight loss?"),
@@ -12,8 +12,8 @@ MCQ_FIELDS = [
 ]
 
 class ScreeningForm(forms.ModelForm):
-    # Parent phone entered at screening time (creates/links guardian if needed)
-    parent_phone_e164 = forms.CharField(label="Parent WhatsApp Number (+countrycode...)", required=False)
+    # Parent phone entered once; accept 10-digit India mobile and normalize to +91...
+    parent_phone_e164 = forms.CharField(label="Parent WhatsApp Number", required=False)
 
     # MCQs (boolean checkboxes)
     for field_key, _ in MCQ_FIELDS:
@@ -25,10 +25,26 @@ class ScreeningForm(forms.ModelForm):
         fields = ["height_cm", "weight_kg", "age_years", "gender", "is_low_income_at_screen"]
 
     def __init__(self, *args, **kwargs):
-        self.student = kwargs.pop("student")
+        # student is OPTIONAL now; used only to prefill gender when available
+        self.student = kwargs.pop("student", None)
         super().__init__(*args, **kwargs)
-        # default gender from student
-        self.fields["gender"].initial = self.student.gender
+        if self.student:
+            self.fields["gender"].initial = self.student.gender
+
+    def clean_parent_phone_e164(self):
+        raw = (self.cleaned_data.get("parent_phone_e164") or "").strip()
+        if not raw:
+            return ""
+        digits = re.sub(r"\D", "", raw)
+        if len(digits) == 11 and digits.startswith("0"):
+            digits = digits[1:]
+        if len(digits) == 12 and digits.startswith("91"):
+            digits = digits[2:]
+        if len(digits) == 10:
+            return f"+91{digits}"
+        if raw.startswith("+") and re.match(r"^\+\d{8,15}$", raw):
+            return raw
+        raise ValidationError("Enter a valid 10-digit Indian mobile number.")
 
     def clean(self):
         data = super().clean()
@@ -39,6 +55,8 @@ class ScreeningForm(forms.ModelForm):
         data["answers"] = answers
         return data
 
+
+
 LANG_CHOICES = (
     ("en", "English"),
     ("hi", "Hindi"),
@@ -46,62 +64,69 @@ LANG_CHOICES = (
 )
 
 class AddStudentForm(forms.Form):
-    # Guardian
-    guardian_full_name = forms.CharField(label="Guardian full name", max_length=255)
-    guardian_phone_e164 = forms.CharField(label="Guardian WhatsApp (+countrycode…)", max_length=20)
-    whatsapp_opt_in = forms.BooleanField(label="WhatsApp opt-in", required=False, initial=True)
-    preferred_language = forms.ChoiceField(choices=LANG_CHOICES, initial="en")
+    """
+    Minimal student+classroom information for the combined Add & Screen page.
+    Guardian fields and student_code are intentionally omitted.
+    Grade/Division are constrained to existing classrooms.
+    """
+    # Classroom (dropdowns)
+    grade = forms.ChoiceField(choices=[])
+    division = forms.ChoiceField(choices=[])
 
-    # Classroom
-    grade = forms.CharField(label="Grade", max_length=64)
-    division = forms.CharField(label="Division", max_length=64, required=False)
-
-    # Student
+    # Student (master)
     first_name = forms.CharField(label="First name", max_length=128)
     last_name = forms.CharField(label="Last name", max_length=128, required=False)
-    gender = forms.ChoiceField(choices=Student.Gender.choices)
     dob = forms.DateField(label="Date of birth", required=False, widget=forms.DateInput(attrs={"type": "date"}))
-    is_low_income = forms.BooleanField(label="Low income family", required=False)
-    student_code = forms.CharField(
-        label="Student code (leave blank to auto-generate)",
-        max_length=64,
-        required=False
-    )
+    is_low_income = forms.BooleanField(label="Low income family (master)", required=False)
 
     def __init__(self, *args, **kwargs):
         self.org = kwargs.pop("organization")
         super().__init__(*args, **kwargs)
 
-    def clean_guardian_phone_e164(self):
-        phone = (self.cleaned_data.get("guardian_phone_e164") or "").strip()
-        # Simple E.164 validation: + then 8-15 digits
-        import re
-        if not re.match(r"^\+\d{8,15}$", phone):
-            raise ValidationError("Enter phone in E.164 format, e.g. +919876543210")
-        return phone
+        # Build Grade choices from existing classrooms
+        grades_qs = (
+            Classroom.objects.filter(organization=self.org)
+            .values_list("grade", flat=True)
+            .distinct()
+            .order_by("grade")
+        )
+        grade_choices = [("", "Select grade")]
+        grade_choices += [(g, g) for g in grades_qs]
+        self.fields["grade"].choices = grade_choices
 
-    def clean_student_code(self):
-        code = (self.cleaned_data.get("student_code") or "").strip()
-        if code and Student.objects.filter(organization=self.org, student_code=code).exists():
-            raise ValidationError("A student with this code already exists in your school.")
-        return code
+        # Division for the initial grade (client-side JS will update on change)
+        initial_grade = self.initial.get("grade") or (grades_qs.first() if hasattr(grades_qs, "first") else None)
+        div_qs = (
+            Classroom.objects.filter(organization=self.org, grade=initial_grade)
+            .values_list("division", flat=True)
+            .order_by("division")
+            .distinct()
+        )
+        div_choices = [("", "Select division")]
+        div_choices += [(d, d or "—") for d in div_qs]
+        self.fields["division"].choices = div_choices
 
     def clean(self):
         data = super().clean()
-        # Gentle duplicate check by name + DOB (does not rely on DB constraint)
+        grade = data.get("grade") or ""
+        division = data.get("division") or ""
+        if grade:
+            exists = Classroom.objects.filter(
+                organization=self.org, grade=grade, division=division
+            ).exists()
+            if not exists:
+                raise ValidationError("Selected Grade/Division does not exist. Please ask admin to create the class first.")
+
+        # Gentle duplicate check by name + DOB
         fn = (data.get("first_name") or "").strip()
         ln = (data.get("last_name") or "").strip()
         dob = data.get("dob")
         if fn and dob:
-            qs = Student.objects.filter(
+            if Student.objects.filter(
                 organization=self.org,
                 first_name__iexact=fn,
                 last_name__iexact=ln,
-                dob=dob
-            )
-            if qs.exists():
-                raise ValidationError(
-                    "A student with the same name and date of birth already exists in your school. "
-                    "Use the list in Teacher Portal to open their screening."
-                )
+                dob=dob,
+            ).exists():
+                raise ValidationError("A student with the same name and date of birth already exists in your school.")
         return data

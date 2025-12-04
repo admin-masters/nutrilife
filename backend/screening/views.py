@@ -24,7 +24,8 @@ from .models import Screening
 from django.db import transaction, IntegrityError
 from django.shortcuts import render
 from .forms import AddStudentForm  # add AddStudentForm
-
+import json  
+from django.core.exceptions import ValidationError
 
 def _org_required(request):
     return getattr(request, "org", None) is not None
@@ -199,80 +200,122 @@ def teacher_add_student(request):
         return HttpResponseForbidden("Organization context required.")
     org = request.org
 
-    # Prefill grade/division if teacher clicked from a classroom filter
+    # Pre-select from classroom filter, if present
     initial = {}
-    classroom_id = request.GET.get("classroom")
-    if classroom_id:
-        c = Classroom.objects.filter(id=classroom_id, organization=org).first()
+    selected_classroom_id = request.GET.get("classroom")
+    if selected_classroom_id:
+        c = Classroom.objects.filter(id=selected_classroom_id, organization=org).first()
         if c:
             initial["grade"] = c.grade
             initial["division"] = c.division
 
+    # Build divisions-by-grade mapping for the template's client-side filtering
+    divisions_by_grade = {}
+    for g, d in Classroom.objects.filter(organization=org).values_list("grade", "division"):
+        divisions_by_grade.setdefault(g, [])
+        if d not in divisions_by_grade[g]:
+            divisions_by_grade[g].append(d or "")
+
     if request.method == "POST":
-        form = AddStudentForm(request.POST, organization=org)
-        if form.is_valid():
+        student_form = AddStudentForm(request.POST, organization=org, initial=initial)
+        screening_form = ScreeningForm(request.POST, student=None)
+
+        valid = student_form.is_valid() & screening_form.is_valid()
+        # For new students we require parent phone to bind a guardian
+        if valid and not screening_form.cleaned_data.get("parent_phone_e164"):
+            screening_form.add_error("parent_phone_e164", "Parent WhatsApp number is required for a new student.")
+            valid = False
+
+        if valid:
             try:
                 with transaction.atomic():
-                    # Guardian: reuse if phone exists in this org, else create
-                    g_phone = form.cleaned_data["guardian_phone_e164"]
-                    guardian, created_guardian = Guardian.objects.get_or_create(
-                        organization=org, phone_e164=g_phone,
-                        defaults={
-                            "full_name": form.cleaned_data["guardian_full_name"],
-                            "whatsapp_opt_in": form.cleaned_data.get("whatsapp_opt_in", True),
-                            "preferred_language": form.cleaned_data.get("preferred_language") or "en",
-                        }
+                    # Resolve classroom – do NOT create new classrooms here
+                    grade = student_form.cleaned_data["grade"]
+                    division = student_form.cleaned_data["division"] or ""
+                    classroom = Classroom.objects.filter(organization=org, grade=grade, division=division).first()
+                    if not classroom:
+                        student_form.add_error(None, "Selected Grade/Division does not exist.")
+                        raise ValidationError("Classroom missing")
+
+                    # Guardian (by phone only), opt-in always True, default name 'Parent'
+                    phone = screening_form.cleaned_data["parent_phone_e164"]
+                    guardian, _ = Guardian.objects.get_or_create(
+                        organization=org, phone_e164=phone,
+                        defaults={"full_name": "Parent", "whatsapp_opt_in": True}
                     )
-                    # Optionally refresh guardian fields (without clobbering intentionally set values)
-                    updates = []
-                    if not guardian.full_name and form.cleaned_data["guardian_full_name"]:
-                        guardian.full_name = form.cleaned_data["guardian_full_name"]; updates.append("full_name")
-                    pref_lang = form.cleaned_data.get("preferred_language") or "en"
-                    if guardian.preferred_language != pref_lang:
-                        guardian.preferred_language = pref_lang; updates.append("preferred_language")
-                    if form.cleaned_data.get("whatsapp_opt_in") and not guardian.whatsapp_opt_in:
-                        guardian.whatsapp_opt_in = True; updates.append("whatsapp_opt_in")
-                    if updates:
-                        guardian.save(update_fields=updates)
+                    if not guardian.whatsapp_opt_in:
+                        guardian.whatsapp_opt_in = True
+                        guardian.save(update_fields=["whatsapp_opt_in"])
 
-                    # Classroom: reuse existing or create new (unique_together handles duplicates)
-                    classroom, _ = Classroom.objects.get_or_create(
-                        organization=org,
-                        grade=form.cleaned_data["grade"].strip(),
-                        division=(form.cleaned_data.get("division") or "").strip(),
-                    )
+                    # Student code: always auto-generate
+                    code = _generate_student_code(org)
 
-                    # Student code: generate if blank
-                    code = (form.cleaned_data.get("student_code") or "").strip() or _generate_student_code(org)
-
-                    # Create the student
+                    # Create student (gender comes from screening snapshot)
                     student = Student.objects.create(
                         organization=org,
                         classroom=classroom,
-                        first_name=form.cleaned_data["first_name"].strip(),
-                        last_name=(form.cleaned_data.get("last_name") or "").strip(),
-                        gender=form.cleaned_data["gender"],
-                        dob=form.cleaned_data.get("dob"),
-                        is_low_income=form.cleaned_data.get("is_low_income", False),
+                        first_name=student_form.cleaned_data["first_name"].strip(),
+                        last_name=(student_form.cleaned_data.get("last_name") or "").strip(),
+                        gender=screening_form.cleaned_data["gender"],
+                        dob=student_form.cleaned_data.get("dob"),
+                        is_low_income=student_form.cleaned_data.get("is_low_income", False),
                         student_code=code,
                         primary_guardian=guardian,
                     )
 
-                messages.success(request, f"Student “{student.full_name}” created.")
+                    # Create screening (same logic as screening_create)
+                    s = Screening(
+                        organization=org,
+                        student=student,
+                        teacher=request.user,
+                        screened_at=timezone.now(),
+                        height_cm=screening_form.cleaned_data["height_cm"],
+                        weight_kg=screening_form.cleaned_data["weight_kg"],
+                        age_years=screening_form.cleaned_data["age_years"],
+                        gender=screening_form.cleaned_data["gender"],
+                        answers=screening_form.cleaned_data["answers"],
+                        is_low_income_at_screen=screening_form.cleaned_data["is_low_income_at_screen"],
+                    )
+
+                    rr = compute_risk(
+                        age_years=s.age_years,
+                        gender=s.gender,
+                        height_cm=float(s.height_cm) if s.height_cm else None,
+                        weight_kg=float(s.weight_kg) if s.weight_kg else None,
+                        answers=s.answers or {},
+                    )
+                    s.risk_level = rr.level
+                    s.red_flags = rr.red_flags
+                    s.save()
+
+                messages.success(request, f"Student “{student.full_name}” created and screening completed.")
                 audit_log(
                     request.user, org,
-                    action="teacher_add_student",
+                    action="teacher_add_student_and_screen",
                     target=student,
-                    payload={"guardian_id": guardian.id},
+                    payload={"guardian_id": guardian.id, "screening_id": s.id, "risk": s.risk_level},
                     request=request
                 )
-                # Go straight to screening for this new student
-                return redirect("screening_create", student_id=student.id)
+                return redirect("screening_result", screening_id=s.id)
 
-            except (IntegrityError, ValueError) as e:
-                messages.error(request, f"Could not create student: {e}")
+            except (IntegrityError, ValidationError, ValueError) as e:
+                messages.error(request, f"Could not complete: {e}")
 
     else:
-        form = AddStudentForm(organization=org, initial=initial)
+        student_form = AddStudentForm(organization=org, initial=initial)
+        screening_form = ScreeningForm(student=None)
 
-    return render(request, "screening/add_student.html", {"form": form})
+    # For rendering MCQs nicely like screening_form.html
+    mcq_fields = [screening_form[field_key] for field_key, _ in MCQ_FIELDS]
+
+    return render(
+        request,
+        "screening/add_student.html",
+        {
+            "form": student_form,  # legacy var (unused by the new template, but safe)
+            "student_form": student_form,
+            "screening_form": screening_form,
+            "mcq_fields": mcq_fields,
+            "divisions_by_grade": json.dumps(divisions_by_grade),
+        },
+    )

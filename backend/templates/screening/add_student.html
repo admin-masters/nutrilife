@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Add student</title>
+  <title>Add student & screening</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     fieldset{margin:1rem 0;padding:1rem;border:1px solid #ccc}
@@ -11,47 +11,93 @@
   </style>
 </head>
 <body>
-  <h3>Add student</h3>
+  <h3>Add student & complete screening</h3>
 
-  {% if form.non_field_errors %}
+  {% if student_form.non_field_errors %}
     <div class="errors">
-      {% for err in form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+      {% for err in student_form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
+    </div>
+  {% endif %}
+  {% if screening_form.non_field_errors %}
+    <div class="errors">
+      {% for err in screening_form.non_field_errors %}<div>{{ err }}</div>{% endfor %}
     </div>
   {% endif %}
 
   <form method="post">{% csrf_token %}
-    <fieldset>
-      <legend>Guardian</legend>
-      <label>Full name {{ form.guardian_full_name }}</label>
-      <label>WhatsApp (+countrycode…) {{ form.guardian_phone_e164 }}</label>
-      <label>Preferred language {{ form.preferred_language }}</label>
-      <label>WhatsApp opt-in {{ form.whatsapp_opt_in }}</label>
-    </fieldset>
 
     <fieldset>
       <legend>Classroom</legend>
-      <label>Grade {{ form.grade }}</label>
-      <label>Division {{ form.division }}</label>
+      <label>Grade {{ student_form.grade }}</label>
+      <label>Division {{ student_form.division }}</label>
       <p style="font-size:.9rem;color:#555">
-        If a classroom with this Grade/Division already exists, the student will be added to it.
+        Choose from existing classes. If the section is missing, please ask the admin to create it in Roster.
       </p>
     </fieldset>
 
     <fieldset>
       <legend>Student</legend>
-      <label>First name {{ form.first_name }}</label>
-      <label>Last name {{ form.last_name }}</label>
-      <label>Gender {{ form.gender }}</label>
-      <label>Date of birth {{ form.dob }}</label>
-      <label>Low income {{ form.is_low_income }}</label>
-      <label>Student code {{ form.student_code }}</label>
+      <label>First name {{ student_form.first_name }}</label>
+      <label>Last name {{ student_form.last_name }}</label>
+      <label>Date of birth {{ student_form.dob }}</label>
+      <label>Low income (master record) {{ student_form.is_low_income }}</label>
       <p style="font-size:.9rem;color:#555">
-        Leave Student code empty to auto-generate a unique code for your school.
+        Student code will be auto‑generated. Guardian will be linked by WhatsApp number entered below.
       </p>
     </fieldset>
 
-    <button type="submit">Create & start screening</button>
+    <fieldset>
+      <legend>Screening</legend>
+      <label>Parent WhatsApp (10 digits) {{ screening_form.parent_phone_e164 }}</label>
+      <label>Gender {{ screening_form.gender }}</label>
+      <label>Age (years) {{ screening_form.age_years }}</label>
+      <label>Height (cm) {{ screening_form.height_cm }}</label>
+      <label>Weight (kg) {{ screening_form.weight_kg }}</label>
+      <label>Low-income today? {{ screening_form.is_low_income_at_screen }}</label>
+
+      <fieldset>
+        <legend>Questions</legend>
+        {% for field in mcq_fields %}
+          <label>{{ field.label }} {{ field }}</label>
+          {% if field.errors %}
+            <div style="color:#b00">{{ field.errors }}</div>
+          {% endif %}
+        {% endfor %}
+      </fieldset>
+    </fieldset>
+
+    <button type="submit">Complete screening</button>
     <a href="{% url 'teacher_portal' %}">Cancel</a>
   </form>
+
+  <script>
+    (function(){
+      // Filter Division options when Grade changes
+      const map = {{ divisions_by_grade|safe }};
+      const $grade = document.getElementById("id_grade");
+      const $division = document.getElementById("id_division");
+
+      function syncDivision(){
+        const g = $grade.value;
+        const options = (map[g] || []);
+        while ($division.options.length) $division.remove(0);
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.text = "Select division";
+        $division.add(placeholder);
+        options.forEach(function(d){
+          const opt = document.createElement("option");
+          opt.value = d;
+          opt.text = d || "—";
+          $division.add(opt);
+        });
+      }
+
+      if ($grade && $division) {
+        $grade.addEventListener("change", syncDivision);
+        syncDivision();
+      }
+    })();
+  </script>
 </body>
 </html>
