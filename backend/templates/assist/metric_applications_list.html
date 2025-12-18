@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }} – {{ org.name }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:0 auto;padding:1rem;}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.6rem;border-bottom:1px solid #e5e7eb;text-align:left}
+    .muted{color:#6b7280}
+    .pill{display:inline-block;border:1px solid #d1d5db;border-radius:999px;padding:.1rem .5rem;font-size:.9rem}
+  </style>
+</head>
+<body>
+  <p><a href="{% url 'assist:school_app_dashboard' %}">← Back to dashboard</a></p>
+  <h2>{{ title }}</h2>
+  <p class="muted">Matching period: <strong>{{ period|upper }}</strong> • {{ total }} records</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name of student</th>
+        <th>Class &amp; division of student</th>
+        <th>Age of student</th>
+        <th>Parent’s phone number</th>
+        <th>Applied at</th>
+        <th>Forwarded at</th>
+        <th>Application status</th>
+        <th>Approved at</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in page_obj.object_list %}
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ r.class_div }}</td>
+          <td>{% if r.age %}{{ r.age }}{% else %}-{% endif %}</td>
+          <td>{{ r.phone }}</td>
+          <td>{{ r.applied_at|date:"Y-m-d H:i" }}</td>
+          <td>{% if r.forwarded_at %}{{ r.forwarded_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}</td>
+          <td>{{ r.status }}</td>
+          <td>{% if r.approved_at != 'Pending' %}{{ r.approved_at|date:"Y-m-d H:i" }}{% else %}Pending{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8">No applications</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+    <p>
+      {% if page_obj.has_previous %}
+        <a class="pill" href="?period={{ period }}&page={{ page_obj.previous_page_number }}">Previous</a>
+      {% endif %}
+      <span class="muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a class="pill" href="?period={{ period }}&page={{ page_obj.next_page_number }}">Next</a>
+      {% endif %}
+    </p>
+  {% endif %}
+</body>
+</html>

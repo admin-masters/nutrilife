@@ -22,10 +22,14 @@ def _complete_milestone_on_screening(sender, instance: Screening, created, **kwa
         return
     student = instance.student
     org = instance.organization
-    # For the student's ACTIVE enrollments, complete any due milestones whose due_on has passed
+    # For the student's ACTIVE enrollments, complete any due/overdue milestones whose due_on has passed.
+    # NOTE: without this, an OVERDUE milestone can never be completed and a school will remain suspended.
     enrollments = Enrollment.objects.filter(student=student, organization=org, status=Enrollment.Status.ACTIVE)
     for e in enrollments:
-        for m in e.milestones.filter(status=ScreeningMilestone.Status.DUE, due_on__lte=instance.screened_at.date()):
+        for m in e.milestones.filter(
+            status__in=[ScreeningMilestone.Status.DUE, ScreeningMilestone.Status.OVERDUE],
+            due_on__lte=instance.screened_at.date(),
+        ):
             m.mark_completed(instance)
     # Re-evaluate enforcement (may unsuspend)
     evaluate_org_enforcement(org)

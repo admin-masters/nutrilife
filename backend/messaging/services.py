@@ -50,6 +50,99 @@ def _make_idem_key(*parts):
     # UUIDv5 is stable for the same input and namespace
     return str(uuid.uuid5(uuid.NAMESPACE_URL, raw))
 
+def _click_to_chat_text(body_lines: list[str]) -> str:
+    """Join body lines for pre-filled WhatsApp text (simple, readable)."""
+    return "\n".join([str(x) for x in body_lines if x])
+
+def prepare_redflag_education_click_to_chat(screening: Screening):
+    """
+    Build the SAME payload as RED_EDU_V1, log it, DO NOT send.
+    Return (MessageLog, prefilled_text).
+    """
+    org: Organization = screening.organization
+    guardian, phone = _guardian_and_phone(screening)
+    if not phone:
+        raise ValueError("Missing guardian phone")
+    lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
+    flags_txt = flags_to_text(screening.red_flags, lang)
+    video = edu_video_url(lang)
+
+    components = {
+        "body": [screening.student.full_name, flags_txt, video],
+        "buttons": [video],
+    }
+
+    idem = _make_idem_key("red_edu", phone, screening.id)
+    existing = MessageLog.objects.filter(idempotency_key=idem).first()
+    if existing:
+        body = (existing.payload or {}).get("_components", {}).get("body") or components["body"]
+        return existing, _click_to_chat_text(body)
+
+    # Rate limiting (same as send)
+    check_global_per_min()
+    check_per_phone_daily(phone, "RED_EDU_V1")
+
+    log = MessageLog.objects.create(
+        organization=org,
+        to_phone_e164=phone,
+        template_code="RED_EDU_V1",
+        language=lang,
+        payload={
+            "screening_id": screening.id,
+            "flags": screening.red_flags,
+            "video": video,
+            "_components": components,
+        },
+        related_screening=screening,
+        idempotency_key=idem,
+        status=MessageLog.Status.QUEUED,
+    )
+    return log, _click_to_chat_text(components["body"])
+
+def prepare_redflag_assistance_click_to_chat(screening: Screening):
+    """
+    Build the SAME payload as RED_ASSIST_V1, log it, DO NOT send.
+    Return (MessageLog, prefilled_text).
+    """
+    org: Organization = screening.organization
+    guardian, phone = _guardian_and_phone(screening)
+    if not phone:
+        raise ValueError("Missing guardian phone")
+    lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
+    flags_txt = flags_to_text(screening.red_flags, lang)
+    video = edu_video_url(lang)
+    apply_url = assist_apply_url(screening.student_id, screening.id, lang)
+
+    # NOTE: We do NOT alter payload shape; _components is not stored for ASSIST per current code.
+    idem = _make_idem_key("red_assist", phone, screening.id)
+    existing = MessageLog.objects.filter(idempotency_key=idem).first()
+    if existing:
+        payload = existing.payload or {}
+        body = [flags_txt, payload.get("video", ""), payload.get("apply_url", "")]
+        return existing, _click_to_chat_text(body)
+
+    # Rate limiting (same as send)
+    check_global_per_min()
+    check_per_phone_daily(phone, "RED_ASSIST_V1")
+
+    log = MessageLog.objects.create(
+        organization=org,
+        to_phone_e164=phone,
+        template_code="RED_ASSIST_V1",
+        language=lang,
+        payload={
+            "screening_id": screening.id,
+            "flags": screening.red_flags,
+            "video": video,
+            "apply_url": apply_url,
+        },
+        related_screening=screening,
+        idempotency_key=idem,
+        status=MessageLog.Status.QUEUED,
+    )
+    # Pre-filled WhatsApp text uses only current payload fields/links
+    return log, _click_to_chat_text([flags_txt, video, apply_url])
+
 @transaction.atomic
 def send_redflag_education(screening):
     org = screening.organization

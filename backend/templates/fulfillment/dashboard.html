@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fulfillment</title>
+  <style>
+    body{font-family:system-ui;max-width:1150px;margin:0 auto;padding:1rem;}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
+    .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
+    .btn{display:inline-block;padding:.35rem .7rem;border:1px solid #d1d5db;border-radius:6px;text-decoration:none}
+    .btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+  </style>
+</head>
+<body>
+  <h2>Fulfillment dashboard</h2>
+
+  <div class="row">
+    <a class="btn btn-primary" href="{% url 'fulfillment:production_order_create' %}">New production order</a>
+    <a class="btn btn-primary" href="{% url 'fulfillment:shipment_create' %}">New shipment to school</a>
+    <a class="btn" href="{% url 'fulfillment:manufacturer_po_list' %}">Manufacturer portal</a>
+    <a class="btn" href="{% url 'fulfillment:logistics_shipments_list' %}">Logistics portal</a>
+    <a class="btn" href="{% url 'fulfillment:school_incoming' %}">School shipments</a>
+  </div>
+
+  <h3 style="margin-top:1.5rem">Production orders</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Month</th><th>Manufacturer</th><th>Packs</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for po in pos %}
+        <tr>
+          <td>{{ po.id }}</td>
+          <td>{{ po.month|date:"Y-m" }}</td>
+          <td>{% if po.manufacturer %}{{ po.manufacturer.name }}{% endif %}</td>
+          <td>{{ po.total_packs }}</td>
+          <td>{{ po.status }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No production orders.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:1.5rem">Shipments</h3>
+  <table>
+    <thead><tr><th>ID</th><th>School</th><th>Month</th><th>Status</th><th>Tracking</th><th></th></tr></thead>
+    <tbody>
+      {% for sh in shipments %}
+        <tr>
+          <td>{{ sh.id }}</td>
+          <td>{{ sh.school.name }}</td>
+          <td>M{{ sh.month_index }}</td>
+          <td>{{ sh.status }}</td>
+          <td>{{ sh.tracking_number }}</td>
+          <td><a class="btn" href="{% url 'fulfillment:shipment_detail' sh.id %}">View</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No shipments.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

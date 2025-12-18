@@ -7,6 +7,10 @@ class Role(models.TextChoices):
     TEACHER   = "TEACHER", "Teacher"
     SAPA_ADMIN = "SAPA_ADMIN", "SAPA Admin"
     INDITECH  = "INDITECH", "Inditech"
+    SAPA_PGC = "SAPA_PGC", "SAPA Governing Committee"
+    GRANTOR = "GRANTOR", "Grantor"
+    MANUFACTURER = "MANUFACTURER", "Manufacturer"
+    LOGISTICS = "LOGISTICS", "Logistics Partner"
 
 class User(AbstractUser):
     """
@@ -27,6 +31,11 @@ class Organization(models.Model):
     class OrgType(models.TextChoices):
         SCHOOL = "SCHOOL", "School"
         NGO = "NGO", "NGO"
+        SAPA = "SAPA", "SAPA"
+        INDITECH = "INDITECH", "Inditech"
+        GRANTOR = "GRANTOR", "Grantor"
+        MANUFACTURER = "MANUFACTURER", "Manufacturer"
+        LOGISTICS = "LOGISTICS", "Logistics Partner"
 
     name = models.CharField(max_length=255)
     org_type = models.CharField(max_length=16, choices=OrgType.choices, default=OrgType.SCHOOL)

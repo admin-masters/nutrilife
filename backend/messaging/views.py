@@ -3,6 +3,10 @@ from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from .models import MessageLog
+from .i18n import flags_to_text, choose_language
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from urllib.parse import quote
 
 VERIFY_TOKEN = os.getenv("WA_VERIFY_TOKEN","")
 APP_SECRET = os.getenv("WA_APP_SECRET","")
@@ -65,3 +69,56 @@ def wa_webhook(request):
                     log.save(update_fields=["status","error_code","error_title","updated_at"])
         return JsonResponse({"ok": True})
     return HttpResponse(status=405)
+
+def _digits_only(phone_e164: str) -> str:
+    return "".join([c for c in (phone_e164 or "") if c.isdigit()])
+
+def _wa_link(phone_e164: str, text: str) -> str:
+    digits = _digits_only(phone_e164)
+    return f"https://wa.me/{digits}?text={quote(text)}"
+
+def whatsapp_preview(request, log_id: int):
+    """
+    Interstitial page that (a) shows the pre-filled message, (b) tries to open WhatsApp
+    with a single click fallback. Does NOT send anything automatically.
+    """
+    log = get_object_or_404(MessageLog, pk=log_id)
+    payload = log.payload or {}
+
+    # Build the prefilled text ONLY from current payload + links
+    if log.template_code == "RED_EDU_V1":
+        body = (payload.get("_components", {}) or {}).get("body") or []
+        text = "\n".join([str(x) for x in body if x])
+    elif log.template_code == "RED_ASSIST_V1":
+        # flags humanization (no payload change)
+        try:
+            s = log.related_screening
+            lang = choose_language(
+                getattr(getattr(s.student, "primary_guardian", None), "preferred_language", None),
+                getattr(s.organization, "locale", None)
+            )
+            flags_txt = flags_to_text(payload.get("flags", []), lang)
+        except Exception:
+            flags_txt = ", ".join(payload.get("flags", []))
+        text = "\n".join([
+            flags_txt,
+            payload.get("video", "") or "",
+            payload.get("apply_url", "") or "",
+        ]).strip()
+    else:
+        text = json.dumps(payload)  # fallback (not expected for this flow)
+
+    wa_url = _wa_link(log.to_phone_e164, text)
+    # By default return to screening result; allow override with ?next=
+    next_url = request.GET.get("next")
+    if not next_url and log.related_screening_id:
+        next_url = reverse("screening_result", args=[log.related_screening_id])
+    next_url = next_url or "/"
+
+    return render(request, "screening/whatsapp_preview.html", {
+        "wa_url": wa_url,
+        "message_text": text,
+        "phone": log.to_phone_e164,
+        "template_code": log.template_code,
+        "next_url": next_url,
+    })

@@ -63,6 +63,8 @@ LANG_CHOICES = (
     ("local", "Local language"),
 )
 
+# --- in backend/screening/forms.py ---
+
 class AddStudentForm(forms.Form):
     """
     Minimal student+classroom information for the combined Add & Screen page.
@@ -75,15 +77,15 @@ class AddStudentForm(forms.Form):
 
     # Student (master)
     first_name = forms.CharField(label="First name", max_length=128)
-    last_name = forms.CharField(label="Last name", max_length=128, required=False)
-    dob = forms.DateField(label="Date of birth", required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    # REMOVED: last_name
+    dob = forms.DateField(label="Date of birth", required=False,
+                          widget=forms.DateInput(attrs={"type": "date"}))
     is_low_income = forms.BooleanField(label="Low income family (master)", required=False)
 
     def __init__(self, *args, **kwargs):
         self.org = kwargs.pop("organization")
         super().__init__(*args, **kwargs)
 
-        # Build Grade choices from existing classrooms
         grades_qs = (
             Classroom.objects.filter(organization=self.org)
             .values_list("grade", flat=True)
@@ -94,7 +96,6 @@ class AddStudentForm(forms.Form):
         grade_choices += [(g, g) for g in grades_qs]
         self.fields["grade"].choices = grade_choices
 
-        # Division for the initial grade (client-side JS will update on change)
         initial_grade = self.initial.get("grade") or (grades_qs.first() if hasattr(grades_qs, "first") else None)
         div_qs = (
             Classroom.objects.filter(organization=self.org, grade=initial_grade)
@@ -117,16 +118,14 @@ class AddStudentForm(forms.Form):
             if not exists:
                 raise ValidationError("Selected Grade/Division does not exist. Please ask admin to create the class first.")
 
-        # Gentle duplicate check by name + DOB
+        # Duplicate check WITHOUT last name
         fn = (data.get("first_name") or "").strip()
-        ln = (data.get("last_name") or "").strip()
         dob = data.get("dob")
         if fn and dob:
             if Student.objects.filter(
                 organization=self.org,
                 first_name__iexact=fn,
-                last_name__iexact=ln,
                 dob=dob,
             ).exists():
-                raise ValidationError("A student with the same name and date of birth already exists in your school.")
+                raise ValidationError("A student with the same first name and date of birth already exists in your school.")
         return data

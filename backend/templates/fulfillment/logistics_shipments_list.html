@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Logistics Shipments</title>
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:0 auto;padding:1rem;}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.6rem;border-bottom:1px solid #eee;text-align:left}
+    input,button{padding:.4rem;border:1px solid #d1d5db;border-radius:6px}
+    .btn{display:inline-block;padding:.35rem .7rem;border:1px solid #d1d5db;border-radius:6px;text-decoration:none}
+    .btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
+  </style>
+</head>
+<body>
+  <h2>Logistics – Shipments ({{ org.name }})</h2>
+  <p><a class="btn" href="{% url 'fulfillment:dashboard' %}">Back</a></p>
+
+  <table>
+    <thead><tr><th>ID</th><th>School</th><th>Month</th><th>Status</th><th>Tracking</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for sh in shipments %}
+        <tr>
+          <td>{{ sh.id }}</td>
+          <td>{{ sh.school.name }}</td>
+          <td>M{{ sh.month_index }}</td>
+          <td>{{ sh.status }}</td>
+          <td>{{ sh.tracking_number }}</td>
+          <td>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <a class="btn" href="{% url 'fulfillment:shipment_detail' sh.id %}">View</a>
+              {% if sh.status == 'PLANNED' %}
+                <form method="post" action="{% url 'fulfillment:shipment_dispatch' sh.id %}">{% csrf_token %}
+                  <input name="tracking_number" placeholder="Tracking" value="{{ sh.tracking_number }}">
+                  <button class="btn btn-primary" type="submit">Dispatch</button>
+                </form>
+              {% elif sh.status == 'DISPATCHED' %}
+                <form method="post" action="{% url 'fulfillment:shipment_deliver' sh.id %}">{% csrf_token %}
+                  <button class="btn btn-primary" type="submit" onclick="return confirm('Mark delivered?')">Mark delivered</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No shipments.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

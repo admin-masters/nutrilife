@@ -20,8 +20,22 @@ class CurrentOrganizationMiddleware:
 
         u = getattr(request, "user", None)
         if u and u.is_authenticated:
-            org_id = request.headers.get("X-Organization-Id") or request.GET.get("org")
             qs = OrgMembership.objects.select_related("organization").filter(user=u, is_active=True)
+
+            # 0) Session-selected org (set by onboarding or token link)
+            sess_org_id = request.session.get("current_org_id")
+            if sess_org_id:
+                try:
+                    mem = qs.get(organization_id=int(sess_org_id))
+                    request.org = mem.organization
+                    request.membership = mem
+                    return self.get_response(request)
+                except (OrgMembership.DoesNotExist, ValueError):
+                    # Remove invalid session org
+                    request.session.pop("current_org_id", None)
+
+            # 1) Header or ?org= fallback (kept as-is)
+            org_id = request.headers.get("X-Organization-Id") or request.GET.get("org")
             if org_id:
                 try:
                     mem = qs.get(organization_id=int(org_id))

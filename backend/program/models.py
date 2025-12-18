@@ -198,29 +198,32 @@ class MonthlySupply(models.Model):
     #     # (whatever you already do to persist `rows`, e.g., bulk_create)
     @staticmethod
     def bootstrap_for_enrollment(e: "Enrollment"):
-        existing = {m.milestone for m in e.milestones.all()}
+        """Create supplies 1..6 for an enrollment if they do not already exist.
 
-        # Normalize before math, in case anything else in the future sets strings
+        IMPORTANT: this method *must* create MonthlySupply rows. Milestone creation
+        is handled by ScreeningMilestone.bootstrap_for_enrollment().
+        """
+        if e.supplies.exists():
+            return
+
+        # Normalize dates (defensive)
         start = e.start_date
         if isinstance(start, str):
-            start = parse_date(start)
+            start = parse_date(start) or timezone.now().date()
 
-        rows = []
-        if "MONTH_3" not in existing:
-            rows.append(ScreeningMilestone(
-                enrollment=e,
-                milestone=ScreeningMilestone.Milestone.MONTH_3,
-                due_on=start + timedelta(days=90),
-            ))
-        if "MONTH_6" not in existing:
-            rows.append(ScreeningMilestone(
-                enrollment=e,
-                milestone=ScreeningMilestone.Milestone.MONTH_6,
-                due_on=start + timedelta(days=180),
-            ))
+        objs = []
+        for i in range(1, 7):
+            sched = start + timedelta(days=30 * (i - 1))
+            objs.append(
+                MonthlySupply(
+                    enrollment=e,
+                    month_index=i,
+                    scheduled_delivery_date=sched,
+                    qr_token=_unique_qr_token(),
+                )
+            )
 
-        if rows:
-            ScreeningMilestone.objects.bulk_create(rows)
+        MonthlySupply.objects.bulk_create(objs, ignore_conflicts=True)
 
 class ComplianceSubmission(models.Model):
     class Status(models.TextChoices):

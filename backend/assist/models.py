@@ -16,9 +16,42 @@ class Application(models.Model):
         REJECTED  = "REJECTED", "Rejected"
         CLOSED    = "CLOSED", "Closed"   # optional future use
 
+    class IncomeVerificationStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending school verification"
+        VERIFIED = "VERIFIED", "Verified"
+        REJECTED = "REJECTED", "Rejected"
+
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="applications")
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="applications")
     guardian = models.ForeignKey(Guardian, on_delete=models.SET_NULL, null=True, blank=True, related_name="applications")
+
+    # Screening that triggered this application (used for auditability and baseline linkage)
+    trigger_screening = models.ForeignKey(
+        "screening.Screening",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assistance_applications",
+    )
+
+    # Set from Screening.is_low_income_at_screen at the time of application.
+    # School admins can verify/reject before forwarding to SAPA.
+    low_income_declared = models.BooleanField(default=False)
+    income_verification_status = models.CharField(
+        max_length=16,
+        choices=IncomeVerificationStatus.choices,
+        default=IncomeVerificationStatus.PENDING,
+        db_index=True,
+    )
+    income_verified_at = models.DateTimeField(null=True, blank=True)
+    income_verified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="income_verified_applications",
+    )
+    income_verification_notes = models.CharField(max_length=255, blank=True)
 
     source = models.CharField(max_length=16, choices=Source.choices, default=Source.PARENT)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.APPLIED)
@@ -55,6 +88,13 @@ class ApprovalBatch(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="approval_batches")
     method = models.CharField(max_length=16, choices=Method.choices)
     n_selected = models.PositiveIntegerField(null=True, blank=True)
+    grant = models.ForeignKey(
+        "grants.Grant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approval_batches",
+    )
     executed_at = models.DateTimeField(default=timezone.now)
 
     created_at = models.DateTimeField(default=timezone.now, db_index=True)

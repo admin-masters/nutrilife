@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Get started</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui;max-width:720px;margin:0 auto;padding:1.5rem;}
+    .tabs{display:flex;gap:1rem;margin-bottom:1rem}
+    .tab{padding:.5rem 1rem;border:1px solid #e5e7eb;border-radius:8px;text-decoration:none}
+    .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
+    form{display:grid;gap:.75rem}
+    label{display:block;font-weight:600}
+    input,select{width:100%;padding:.5rem;border:1px solid #d1d5db;border-radius:6px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+    .actions{margin-top:1rem}
+    .btn{padding:.5rem 1rem;border:1px solid #2563eb;background:#2563eb;color:#fff;border-radius:6px}
+    .err{color:#b91c1c}
+  </style>
+</head>
+<body>
+  <h1>Welcome to Nutrilift</h1>
+  <p>Create your school organization or sign in to continue.</p>
+
+  <div class="tabs">
+    <a class="tab {% if mode == 'signup' %}active{% endif %}" href="?mode=signup">Create organization</a>
+    <a class="tab {% if mode == 'login' %}active{% endif %}" href="?mode=login">Log in</a>
+  </div>
+
+  {% if mode == 'login' %}
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="mode" value="login">
+      {% if login_form.non_field_errors %}<div class="err">{{ login_form.non_field_errors }}</div>{% endif %}
+      <div>
+        <label>Email</label>{{ login_form.email }}
+        {% for e in login_form.email.errors %}<div class="err">{{ e }}</div>{% endfor %}
+      </div>
+      <div>
+        <label>Password</label>{{ login_form.password }}
+        {% for e in login_form.password.errors %}<div class="err">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="actions"><button class="btn" type="submit">Log in</button></div>
+    </form>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}<input type="hidden" name="mode" value="signup">
+      {% if signup_form.non_field_errors %}<div class="err">{{ signup_form.non_field_errors }}</div>{% endif %}
+      <div>
+        <label>Organization name</label>{{ signup_form.name }}
+        {% for e in signup_form.name.errors %}<div class="err">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="row">
+        <div>
+          <label>Organization type</label>{{ signup_form.org_type }}
+          {% for e in signup_form.org_type.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+      <div class="row">
+        <div><label>City</label>{{ signup_form.city }}</div>
+        <div><label>State</label>{{ signup_form.state }}</div>
+      </div>
+      <div><label>Country</label>{{ signup_form.country }}</div>
+
+      <hr>
+      <div><label>Admin email</label>{{ signup_form.admin_email }}</div>
+      <div class="row">
+        <div><label>Password</label>{{ signup_form.password1 }}</div>
+        <div><label>Confirm password</label>{{ signup_form.password2 }}</div>
+      </div>
+
+      <p style="color:#6b7280">Timezone defaults to “Asia/Kolkata”. Link token is generated automatically. “Is active” is true by default.</p>
+      <div class="actions"><button class="btn" type="submit">Create & continue</button></div>
+    </form>
+  {% endif %}
+</body>
+</html>

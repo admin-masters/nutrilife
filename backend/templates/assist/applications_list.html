@@ -1,0 +1,89 @@
+<html>
+<head>
+<h2>{{ org.name }} – Applications</h2>
+<style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #f5f5f5;
+    }
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+<form method="get" action="">
+  <label>Filter by status:
+    <select name="status" onchange="this.form.submit()">
+      <option value="APPLIED"   {% if status == 'APPLIED' %}selected{% endif %}>Applied</option>
+      <option value="FORWARDED" {% if status == 'FORWARDED' %}selected{% endif %}>Forwarded</option>
+    </select>
+  </label>
+</form>
+
+{% if status == 'APPLIED' and counts.APPLIED %}
+    <form method="post" action="{% url 'assist:forward_all' %}">{% csrf_token %}
+      <button class="btn btn-primary" type="submit">Forward All Verified to SAPA</button>
+    </form>
+  {% endif %}
+
+  <table style="margin-top:1rem">
+    <thead>
+      <tr>
+        <th>Applied At</th>
+        <th>Student</th>
+        <th>Parent Phone</th>
+        <th>Low-income?</th>
+        <th>Income verification</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in applications %}
+        <tr>
+          <td>{{ a.applied_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ a.student.full_name }}</td>
+          <td>{% if a.guardian %}{{ a.guardian.phone_e164 }}{% endif %}</td>
+          <td>{% if a.low_income_declared %}Yes{% else %}No{% endif %}</td>
+          <td>{{ a.income_verification_status }}</td>
+          <td>{{ a.status }}</td>
+          <td>
+            {% if a.status == 'APPLIED' %}
+              {% if not a.low_income_declared %}
+                Not eligible (not low-income)
+              {% elif a.income_verification_status == 'PENDING' %}
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                  <form method="post" action="{% url 'assist:verify_income' a.id %}">{% csrf_token %}
+                    <button class="btn" type="submit">Verify</button>
+                  </form>
+                  <form method="post" action="{% url 'assist:reject_income' a.id %}">{% csrf_token %}
+                    <button class="btn" type="submit">Reject</button>
+                  </form>
+                </div>
+              {% elif a.income_verification_status == 'VERIFIED' %}
+                <form method="post" action="{% url 'assist:forward_one' a.id %}">{% csrf_token %}
+                  <button class="btn" type="submit">Forward</button>
+                </form>
+              {% else %}
+                Rejected
+              {% endif %}
+            {% else %}-{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">No applications</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

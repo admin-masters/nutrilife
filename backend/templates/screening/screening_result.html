@@ -9,24 +9,23 @@
   {% endif %}
 
   <h3>Result: {{ s.risk_level }}</h3>
-  <p><strong>Red flags:</strong> {{ s.red_flags|join:", " }} {% if not s.red_flags %}none{% endif %}</p>
+<p><strong>Red flags:</strong> {{ s.red_flags|join:", " }} {% if not s.red_flags %}none{% endif %}</p>
 
-  {% if s.risk_level == "RED" %}
-    {% if s.student.primary_guardian and s.student.primary_guardian.phone_e164 %}
-      <p>
-        <a href="{% url 'send_education' s.id %}">Send education message</a>
-        {% if s.is_low_income_at_screen or s.student.is_low_income %}
-          &nbsp;|&nbsp;
-          <a href="{% url 'send_assistance' s.id %}">Send assistance invitation</a>
-        {% endif %}
-      </p>
+{% if s.student.primary_guardian and s.student.primary_guardian.phone_e164 %}
+  <p>
+    <strong>Parent message:</strong>
+    {% if last_message %}
+      {{ last_message.template_code }} → {{ last_message.get_status_display }}
+      {% if last_message.sent_at %} at {{ last_message.sent_at }}{% endif %}
     {% else %}
-      <p><em>No parent WhatsApp number on file. Go back and add it.</em></p>
+      Queued automatically based on screening results.
     {% endif %}
-  {% else %}
-    <p>No red flags detected. You can proceed to the next student.</p>
-  {% endif %}
+  </p>
+{% else %}
+  <p><em>No parent WhatsApp number on file. Go back and add it.</em></p>
+{% endif %}
 
-  <p><a href="{% url 'teacher_portal' %}">Back to Teacher Portal</a></p>
+<p><a href="{% url 'teacher_portal' %}">Back to Teacher Portal</a></p>
+
 </body>
 </html>

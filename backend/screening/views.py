@@ -26,11 +26,80 @@ from django.shortcuts import render
 from .forms import AddStudentForm  # add AddStudentForm
 import json  
 from django.core.exceptions import ValidationError
+from messaging.ratelimit import RateLimitExceeded
+from messaging.models import MessageLog
+from django.contrib.auth.decorators import login_required
+from accounts.models import Organization, OrgMembership, Role
+
+from django.shortcuts import get_object_or_404, redirect
+from accounts.models import Organization, OrgMembership
+from .decorators import require_teacher_or_public
+from messaging.services import (
+    send_redflag_education, send_redflag_assistance,  # keep for other flows
+    prepare_redflag_education_click_to_chat,
+    prepare_redflag_assistance_click_to_chat,
+)
+def teacher_portal_token(request, token: str):
+    """
+    PUBLIC entry point. Resolves org by token, starts a 'public teacher' session for that org,
+    and then shows the regular teacher portal (now guarded by require_teacher_or_public).
+    """
+    org = get_object_or_404(Organization, screening_link_token=token)
+
+    # Start public teacher session for this org
+    request.session["public_teacher_org_id"] = org.id
+
+    # For immediate rendering convenience
+    request.org = org
+
+    # If the visitor happens to be logged in and a member, keep membership around for downstream use
+    if request.user.is_authenticated:
+        request.membership = OrgMembership.objects.filter(
+            user=request.user, organization=org, is_active=True
+        ).first()
+
+    # Render the teacher portal using the same function used by authenticated teachers
+    return teacher_portal(request)
+
 
 def _org_required(request):
     return getattr(request, "org", None) is not None
 
-@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+def _auto_send_for_screening(request, s: Screening):
+    """
+    Decide and PREPARE (do NOT auto-send) the correct WhatsApp message
+    after a screening is created. Returns the MessageLog to open Click-to-Chat.
+    """
+    guardian = getattr(s.student, "primary_guardian", None)
+    phone = getattr(guardian, "phone_e164", "") if guardian else ""
+    if not phone:
+        messages.warning(request, "No parent WhatsApp on file — message not sent.")
+        return None
+
+    # Consider either the snapshot on the screening OR the student flag
+    #low_income = bool(s.is_low_income_at_screen) or bool(getattr(s.student, "is_low_income", False))
+    low_income = bool(s.is_low_income_at_screen)
+    try:
+        if s.risk_level == Screening.RiskLevel.RED and low_income:
+            log, _text = prepare_redflag_assistance_click_to_chat(s)
+            messages.success(request, "Assistance message prepared — open WhatsApp to send.")
+            audit_log(request.user, request.org, "AUTO_PREP_ASSISTANCE",
+                      target=s, payload={"message_id": log.id}, request=request)
+        else:
+            log, _text = prepare_redflag_education_click_to_chat(s)
+            messages.success(request, "Education message prepared — open WhatsApp to send.")
+            audit_log(request.user, request.org, "AUTO_PREP_EDUCATION",
+                      target=s, payload={"message_id": log.id}, request=request)
+        return log
+    except RateLimitExceeded as e:
+        messages.warning(request, f"Message not sent due to rate limits: {e}")
+        return None
+    except Exception as e:
+        messages.error(request, f"Auto-send failed: {e}")
+        return None
+
+#@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+@require_teacher_or_public
 def teacher_portal(request):
     if not _org_required(request):
         return HttpResponseForbidden("Organization context required.")
@@ -58,9 +127,11 @@ def teacher_portal(request):
         "selected_classroom": int(classroom_id) if classroom_id else None,
         "selected_risk": risk or "",
         "q": q,
+        "teacher_token": request.org.screening_link_token,
     })
 
-@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+#@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+@require_teacher_or_public
 def screening_create(request, student_id):
     if not _org_required(request):
         return HttpResponseForbidden("Organization context required.")
@@ -101,12 +172,18 @@ def screening_create(request, student_id):
                     organization=org, phone_e164=phone,
                     defaults={"full_name": "Parent", "whatsapp_opt_in": True}
                 )
-                if not student.primary_guardian_id:
+                # Rebind if different, so messages go to the phone the teacher just entered
+                if student.primary_guardian_id != guardian.id:
                     student.primary_guardian = guardian
                     student.save(update_fields=["primary_guardian"])
+            
+            log = _auto_send_for_screening(request, s)
 
             audit_log(request.user, org, "SCREENING_CREATED", target=s, payload={"risk": s.risk_level})
-
+            if log:
+                preview = reverse("whatsapp_preview", args=[log.id])
+                preview += f"?next={reverse('screening_result', args=[s.id])}"
+                return redirect(preview)
             return redirect(reverse("screening_result", args=[s.id]))
         else:
             # ------- re-render with field errors -------
@@ -126,47 +203,35 @@ def screening_create(request, student_id):
         )
     return render(request, "screening/screening_form.html", {"student": student, "form": form, "MCQ_FIELDS": MCQ_FIELDS})
 
-@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+#@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+@require_teacher_or_public
 def screening_result(request, screening_id):
     if not _org_required(request):
         return HttpResponseForbidden("Organization context required.")
     org = request.org
     s = get_object_or_404(Screening, pk=screening_id, organization=org)
 
-    # WhatsApp pre-filled message links (opened on teacher device). Real template sending in Sprint 2.
-    parent_phone = s.student.primary_guardian.phone_e164 if s.student.primary_guardian else ""
-    report = f"Screening result for {s.student.full_name}: {s.risk_level}. Flags: {', '.join(s.red_flags) or 'none'}."
-    education_msg = (report + " Please watch this short video on nutrition and consult your pediatrician."
-                     " Video: https://example.org/nutrition-video")
-    assistance_msg = (report + " Your child may be eligible for supplementation support. "
-                      "Learn more and apply here: https://example.org/support-apply")
+    # Show the latest message (if any) associated to this screening
+    last_message = MessageLog.objects.filter(related_screening=s).order_by("-created_at").first()
 
-    def wa_link(text):
-        if not parent_phone:
-            return ""
-        from urllib.parse import quote_plus
-        return f"https://wa.me/{parent_phone.replace('+','')}/?text={quote_plus(text)}"
-
-    links = {
-        "education_link": wa_link(education_msg),
-        "assistance_link": wa_link(assistance_msg) if s.is_low_income_at_screen else "",
-    }
-
-    return render(request, "screening/screening_result.html", {"s": s, "links": links})
+    return render(request, "screening/screening_result.html", {"s": s, "last_message": last_message})
 
 
-@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+
+#@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+@require_teacher_or_public
 def send_education(request, screening_id):
     s = get_object_or_404(Screening, pk=screening_id, organization=request.org)
     # basic guards
     if not s.student.primary_guardian or not s.student.primary_guardian.phone_e164:
         messages.error(request, "Parent WhatsApp number missing.")
         return redirect("screening_result", screening_id=s.id)
-    log = send_redflag_education(s)
-    messages.success(request, f"Education message queued → status {log.status}.")
-    return redirect("screening_result", screening_id=s.id)
+    log, _text = prepare_redflag_education_click_to_chat(s)
+    preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={reverse('screening_result', args=[s.id])}"
+    return redirect(preview)
 
-@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+#@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+@require_teacher_or_public
 def send_assistance(request, screening_id):
     s = get_object_or_404(Screening, pk=screening_id, organization=request.org)
     if not s.is_low_income_at_screen and not s.student.is_low_income:
@@ -175,9 +240,9 @@ def send_assistance(request, screening_id):
     if not s.student.primary_guardian or not s.student.primary_guardian.phone_e164:
         messages.error(request, "Parent WhatsApp number missing.")
         return redirect("screening_result", screening_id=s.id)
-    log = send_redflag_assistance(s)
-    messages.success(request, f"Assistance message queued → status {log.status}.")
-    return redirect("screening_result", screening_id=s.id)
+    log, _text = prepare_redflag_assistance_click_to_chat(s)
+    preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={reverse('screening_result', args=[s.id])}"
+    return redirect(preview)
 
 # Add somewhere near other helpers in this file
 def _generate_student_code(org) -> str:
@@ -193,8 +258,9 @@ def _generate_student_code(org) -> str:
     # Fallback – extremely unlikely to be needed
     raise ValueError("Could not generate a unique student code. Please enter one manually.")
 
-@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
-def teacher_add_student(request):
+#@require_roles(Role.TEACHER, Role.ORG_ADMIN, allow_superuser=True)
+@require_teacher_or_public
+def teacher_add_student(request,token=None):
     # Ensure org context is present
     if not getattr(request, "org", None):
         return HttpResponseForbidden("Organization context required.")
@@ -255,7 +321,7 @@ def teacher_add_student(request):
                         organization=org,
                         classroom=classroom,
                         first_name=student_form.cleaned_data["first_name"].strip(),
-                        last_name=(student_form.cleaned_data.get("last_name") or "").strip(),
+                        last_name="",
                         gender=screening_form.cleaned_data["gender"],
                         dob=student_form.cleaned_data.get("dob"),
                         is_low_income=student_form.cleaned_data.get("is_low_income", False),
@@ -274,7 +340,7 @@ def teacher_add_student(request):
                         age_years=screening_form.cleaned_data["age_years"],
                         gender=screening_form.cleaned_data["gender"],
                         answers=screening_form.cleaned_data["answers"],
-                        is_low_income_at_screen=screening_form.cleaned_data["is_low_income_at_screen"],
+                        is_low_income_at_screen=student_form.cleaned_data.get("is_low_income", False),
                     )
 
                     rr = compute_risk(
@@ -288,6 +354,8 @@ def teacher_add_student(request):
                     s.red_flags = rr.red_flags
                     s.save()
 
+                log = _auto_send_for_screening(request, s)
+
                 messages.success(request, f"Student “{student.full_name}” created and screening completed.")
                 audit_log(
                     request.user, org,
@@ -296,6 +364,9 @@ def teacher_add_student(request):
                     payload={"guardian_id": guardian.id, "screening_id": s.id, "risk": s.risk_level},
                     request=request
                 )
+                if log:
+                    preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={reverse('screening_result', args=[s.id])}"
+                    return redirect(preview)
                 return redirect("screening_result", screening_id=s.id)
 
             except (IntegrityError, ValidationError, ValueError) as e:

@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Open WhatsApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // Try to open WhatsApp automatically; user still sends manually inside WhatsApp
+      window.addEventListener('load', function () {
+        var href = "{{ wa_url|escapejs }}";
+        // Small delay improves success on some browsers
+        setTimeout(function(){ window.location.href = href; }, 50);
+      });
+    </script>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; }
+      pre { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; }
+      a.button { display: inline-block; padding: 10px 16px; text-decoration: none; border-radius: 6px; border: 1px solid #ccc; }
+    </style>
+  </head>
+  <body>
+    <h2>Ready to message the parent</h2>
+    <p>If WhatsApp didn’t open automatically, tap the button below.</p>
+    <p><a class="button" href="{{ wa_url }}">Open WhatsApp</a></p>
+
+    <h3>Message preview</h3>
+    <pre>{{ message_text }}</pre>
+
+    <p><a class="button" href="{{ next_url }}">Continue</a></p>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>New Shipment</title>
+  <style>body{font-family:system-ui;max-width:700px;margin:0 auto;padding:1rem}label{display:block;margin-top:.75rem}input,select,textarea{width:100%;padding:.5rem} .btn{margin-top:1rem;padding:.5rem .8rem}</style>
+</head>
+<body>
+  <h2>New shipment to school</h2>
+  <p style="color:#6b7280">When you create a shipment, all eligible monthly supplies for the selected school & month are automatically attached.</p>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Create shipment</button>
+  </form>
+  <p><a href="{% url 'fulfillment:dashboard' %}">Back</a></p>
+</body>
+</html>
