@@ -90,7 +90,7 @@ DATABASES = {
         #"NAME": os.getenv("MYSQL_DATABASE", "nutrilift"),
         "NAME": "nutrilift",
         #"USER": os.getenv("MYSQL_USER", "nutrilift"),
-        "USER": "root",
+        "USER": "nutrilift",
         #"PASSWORD": os.getenv("MYSQL_PASSWORD", "nutrilift"),
         "PASSWORD": "q&cWMVFaV%BV%SrQ",
         #"HOST": os.getenv("DB_HOST", "127.0.0.1"),
