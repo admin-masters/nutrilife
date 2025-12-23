@@ -13,6 +13,45 @@ from pathlib import Path
 from celery.schedules import crontab
 import json, sys
 
+#To use the project without Docker
+from dotenv import load_dotenv
+import socket
+
+SETTINGS_FILE = Path(__file__).resolve()
+PROJECT_ROOT = SETTINGS_FILE.parent.parent.parent  # Go up: nutrilift -> backend -> project_root
+load_dotenv(PROJECT_ROOT / ".env", override=False)
+
+
+# Auto-detect if running in Docker or locally
+def _is_docker():
+    """Detect if we're running inside Docker."""
+    # Check for Docker-specific file
+    if Path('/.dockerenv').exists():
+        return True
+    # Try to resolve Docker service hostname 'db'
+    try:
+        socket.gethostbyname('db')
+        return True
+    except (socket.gaierror, OSError):
+        return False
+
+IS_DOCKER = _is_docker()
+
+# Auto-adjust DB_HOST and Redis URLs for local development
+if not IS_DOCKER:
+    # Override Docker-specific hostnames with localhost equivalents
+    if os.getenv("DB_HOST") == "db":
+        os.environ["DB_HOST"] = "127.0.0.1"
+    if os.getenv("CELERY_BROKER_URL", "").startswith("redis://redis:"):
+        os.environ["CELERY_BROKER_URL"] = "redis://localhost:6379/0"
+    if os.getenv("CELERY_RESULT_BACKEND", "").startswith("redis://redis:"):
+        os.environ["CELERY_RESULT_BACKEND"] = "redis://localhost:6379/1"
+    if os.getenv("MYSQL_HOST") == "db":
+        os.environ["MYSQL_HOST"] = "127.0.0.1"
+
+    # Rate limiting Redis URL is independent of Celery and must be normalized too
+    if os.getenv("RATELIMIT_REDIS_URL", "").startswith("redis://redis:"):
+        os.environ["RATELIMIT_REDIS_URL"] = "redis://localhost:6379/0"
 # PHASE 11
 LOG_JSON = os.getenv("LOG_JSON", "1") == "1"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -20,6 +59,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 # IMPORTANT: this file lives at nutrilift/backend/nutrilift/settings.py
 # We keep BASE_DIR pointing to /backend (same as before) by using .parent.parent
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-unsafe")
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
@@ -43,7 +83,6 @@ INSTALLED_APPS = [
     "messaging",
     "assist",
     "program.apps.ProgramConfig",  # <- keep this dotted path
-    "grants",
     "fulfillment",
     "reporting",                   # sprint 8
     "ops",                         # observability + backups
@@ -116,15 +155,16 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Phase 2: Funding ---
-# Amount allocated from a grant for each approved enrollment.
-# Leave at 0 to disable grant bookkeeping.
-NUTRILIFT_GRANT_COST_PER_ENROLLMENT = os.getenv("NUTRILIFT_GRANT_COST_PER_ENROLLMENT", "0")
+
+
 
 # Admin URL (harden in staging/prod)
 ADMIN_URL = os.getenv("ADMIN_URL", "admin")
 
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/1")
+# CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
+# CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/1")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
 CELERY_TIMEZONE = TIME_ZONE
 
 # Celery beat schedules (copied as-is)

@@ -67,5 +67,6 @@ def edu_video_url(lang: str) -> str:
 
 def assist_apply_url(student_id: int, screening_id: int, lang: str) -> str:
     base = os.getenv("ASSIST_APPLY_URL_BASE","")
+    print("Base",base)
     sep = "&" if "?" in base else "?"
     return f"{base}{sep}student_id={student_id}&screening_id={screening_id}&lang={lang}"

@@ -7,6 +7,8 @@ from django.utils.text import slugify
 
 from accounts.models import Organization, User, OrgMembership, Role
 from .forms import OrgSignupForm, OrgLoginForm
+from django.http import HttpResponse
+from accounts.decorators import require_roles
 
 
 def _unique_screening_token(name: str) -> str:
@@ -15,6 +17,58 @@ def _unique_screening_token(name: str) -> str:
         token = f"{base}-{get_random_string(8)}"
         if not Organization.objects.filter(screening_link_token=token).exists():
             return token
+
+# --- NEW: OrgType -> Role mapping for the org creator/admin user ---
+ORG_TYPE_TO_ROLE = {
+    Organization.OrgType.SCHOOL: Role.ORG_ADMIN,        # "School Admin"
+    Organization.OrgType.NGO: Role.ORG_ADMIN,           # "School Admin"
+    Organization.OrgType.SAPA: Role.SAPA_ADMIN,         # "SAPA Admin"
+    Organization.OrgType.INDITECH: Role.INDITECH,       # "Inditech"
+    Organization.OrgType.MANUFACTURER: Role.MANUFACTURER,  # "Manufacturer"
+    Organization.OrgType.LOGISTICS: Role.LOGISTICS,     # "Logistics Partner"
+}
+
+def _pick_primary_membership(user: User):
+    """
+    Pick the membership we’ll treat as the user's primary org context.
+    Current product assumption: 1 user -> 1 org (common case).
+    """
+    return (
+        user.memberships
+            .filter(is_active=True)
+            .select_related("organization")
+            .order_by("created_at")
+            .first()
+    )
+
+def _redirect_for_membership(mem: OrgMembership):
+    """
+    Redirect to the most significant dashboard page based on membership role.
+    Keep this mapping EXACTLY as requested.
+    """
+    role = mem.role
+
+    if role == Role.ORG_ADMIN:
+        return redirect(reverse("assist:school_app_dashboard"))  # /assist/admin
+
+    if role == Role.SAPA_ADMIN:
+        return redirect(reverse("assist:sapa_approvals_dashboard"))  # /assist/sapa/approvals
+
+    if role == Role.INDITECH:
+        return redirect(reverse("reporting:inditech_dashboard"))  # /reporting/inditech
+
+
+    if role == Role.MANUFACTURER:
+        return redirect(reverse("fulfillment:manufacturer_po_list"))  # /fulfillment/manufacturer/production-orders
+
+    if role == Role.LOGISTICS:
+        return redirect(reverse("fulfillment:logistics_shipments_list"))  # /fulfillment/logistics/shipments
+
+    # Optional safety fallback:
+    if role == Role.TEACHER:
+        return redirect(reverse("teacher_portal_token", args=[mem.organization.screening_link_token]))
+
+    return redirect(reverse("orgs:org_start"))
 
 
 @transaction.atomic
@@ -32,12 +86,15 @@ def org_start(request):
                 form.add_error(None, "Invalid email or password.")
             else:
                 login(request, user)
-                # If the user has exactly one org membership, set it into the session for continuity
-                mems = user.memberships.filter(is_active=True).select_related("organization")
-                if mems.count() == 1:
-                    request.session["current_org_id"] = mems.first().organization_id
-                # Redirect admins to dashboard; teachers will use their teacher link
-                return redirect(reverse("assist:school_app_dashboard"))
+
+                mem = _pick_primary_membership(user)
+                if not mem:
+                    form.add_error(None, "No active organization membership found for this user.")
+                else:
+                # ensure org context is set for middleware-protected dashboards
+                    request.session["current_org_id"] = mem.organization_id
+                    return _redirect_for_membership(mem)
+
         return render(request, "orgs/start.html", {"mode": "login", "login_form": form, "signup_form": OrgSignupForm()})
 
     # Default: signup
@@ -61,10 +118,17 @@ def org_start(request):
             is_staff=True  # optional; keeps access to Django admin if you wish
         )
         # Link membership
-        OrgMembership.objects.create(user=user, organization=org, role=Role.ORG_ADMIN)
+        selected_org_type = org.org_type  # stored on Organization
+        mapped_role = ORG_TYPE_TO_ROLE.get(selected_org_type, Role.ORG_ADMIN)
+
+        mem = OrgMembership.objects.create(user=user, organization=org, role=mapped_role)
+
         # Log in and set org context for continuity
         login(request, user)
         request.session["current_org_id"] = org.id
-        return redirect(reverse("assist:school_app_dashboard"))
+        return _redirect_for_membership(mem)
+
 
     return render(request, "orgs/start.html", {"mode": "signup", "signup_form": form, "login_form": OrgLoginForm()})
+
+
