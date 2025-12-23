@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
         ("accounts", "0002_organization_assistance_suspended_and_more"),
         ("assist", "0002_approvalbatch_application_sapa_reviewed_at_and_more"),
         ("screening", "0001_initial"),
+        ("grants", "0001_initial"),
     ]
 
     operations = [
@@ -63,5 +64,16 @@ class Migration(migrations.Migration):
             model_name="application",
             name="income_verification_notes",
             field=models.CharField(blank=True, max_length=255),
+        ),
+        migrations.AddField(
+            model_name="approvalbatch",
+            name="grant",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="approval_batches",
+                to="grants.grant",
+            ),
         ),
     ]

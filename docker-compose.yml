@@ -1,0 +1,72 @@
+services:
+  db:
+    image: mysql:8.0
+    command: [
+      "--default-authentication-plugin=mysql_native_password",
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci"
+    ]
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports: ["3306:3306"]
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    # build: ./docker/web
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+    env_file: .env
+    working_dir: /app/backend
+    volumes:
+      - ./backend:/app/backend
+    command: bash -lc "python manage.py runserver 0.0.0.0:8000"
+    ports: ["8000:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+  
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+    env_file: .env
+    working_dir: /app/backend
+    command: celery -A nutrilift worker -l info
+    depends_on: [web, redis]
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    
+  beat:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+    env_file: .env
+    working_dir: /app/backend
+    command: celery -A nutrilift beat -l info
+    depends_on: [web, redis]
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+
+volumes:
+  db_data:
+

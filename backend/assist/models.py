@@ -88,7 +88,13 @@ class ApprovalBatch(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="approval_batches")
     method = models.CharField(max_length=16, choices=Method.choices)
     n_selected = models.PositiveIntegerField(null=True, blank=True)
-    
+    grant = models.ForeignKey(
+        "grants.Grant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approval_batches",
+    )
     executed_at = models.DateTimeField(default=timezone.now)
 
     created_at = models.DateTimeField(default=timezone.now, db_index=True)

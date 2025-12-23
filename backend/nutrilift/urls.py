@@ -27,6 +27,7 @@ urlpatterns = [
     path("", include("messaging.urls")),
     path("", include("assist.urls")),
     path("", include("program.urls")),
+    path("", include("grants.urls")),
     path("", include("fulfillment.urls")),
     path("", include("reporting.urls")),
     path("", include("ops.urls")),

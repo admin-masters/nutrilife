@@ -62,9 +62,7 @@ def inditech_dashboard(request):
     # summary across all schools for the last 6 months + next_due_on
     start, end = _six_months()
     rows = []
-    for org in Organization.objects.filter(
-        org_type__in=[Organization.OrgType.SCHOOL, Organization.OrgType.NGO]
-    ).order_by("name"):
+    for org in Organization.objects.all().order_by("name"):
         agg = period_summary(org, start, end)
         rs, _ = SchoolReportStatus.objects.get_or_create(organization=org)
         rows.append({
@@ -77,12 +75,7 @@ def inditech_dashboard(request):
 
 @require_roles(Role.INDITECH, allow_superuser=True)
 def inditech_school(request, org_id: int):
-    org = get_object_or_404(
-        Organization,
-        pk=org_id,
-        org_type__in=[Organization.OrgType.SCHOOL, Organization.OrgType.NGO],
-    )
-
+    org = get_object_or_404(Organization, pk=org_id)
     start, end = _six_months()
     agg = period_summary(org, start, end)
     rs, _ = SchoolReportStatus.objects.get_or_create(organization=org)
@@ -95,12 +88,7 @@ def inditech_school(request, org_id: int):
 
 @require_roles(Role.INDITECH, allow_superuser=True)
 def inditech_export_school_csv(request, org_id: int):
-    org = get_object_or_404(
-        Organization,
-        pk=org_id,
-        org_type__in=[Organization.OrgType.SCHOOL, Organization.OrgType.NGO],
-    )
-
+    org = get_object_or_404(Organization, pk=org_id)
     start, end = _six_months()
     agg = period_summary(org, start, end)
     buff = io.StringIO()

@@ -11,12 +11,10 @@ This code bundle extends the existing Phase 1 platform with the missing flows fo
 ## What changed
 
 ### 1) Program fixes
-
 - **Fixed `MonthlySupply.bootstrap_for_enrollment()`** so it creates 6 monthly supplies instead of mistakenly creating milestones.
 - **Milestone completion signal** now completes **DUE + OVERDUE** milestones when a screening is recorded (so suspended schools can be unsuspended).
 
 ### 2) Assist (applications)
-
 - Added fields to `assist.Application`:
   - `trigger_screening`
   - `low_income_declared`
@@ -27,10 +25,17 @@ This code bundle extends the existing Phase 1 platform with the missing flows fo
   - Reject income
 - **Forwarding to SAPA** now only forwards apps that are **low‑income declared + income verified**.
 
+### 3) Grants app
+New Django app: `grants`
+- `Grantor`, `Grant`, `GrantAllocation`
+- Basic screens:
+  - `/grants/` dashboard
+  - `/grants/new`
+  - `/grants/grantor/new`
+- SAPA approval screen now supports selecting an **ACTIVE grant** to allocate against.
+
 ### 4) Fulfillment app
-
 New Django app: `fulfillment`
-
 - `ProductionOrder`
 - `SchoolShipment` and `ShipmentItem` (maps to `program.MonthlySupply`)
 - Screens:
@@ -40,7 +45,6 @@ New Django app: `fulfillment`
   - School view: `/fulfillment/school/shipments`
 
 ## Database migrations
-
 This bundle includes new migrations:
 
 - `grants/migrations/0001_initial.py`
@@ -69,16 +73,16 @@ export NUTRILIFT_GRANT_COST_PER_ENROLLMENT="<amount>"   # e.g. "1500"
 If the value is `0` or unset, approvals will not be blocked by grant funds.
 
 5. Create organizations & memberships (via Django admin) for:
-
    - SAPA (`Role.SAPA_ADMIN`, optionally `Role.SAPA_PGC`)
    - Inditech (`Role.INDITECH`)
    - Manufacturer org (`Role.MANUFACTURER`)
    - Logistics org (`Role.LOGISTICS`)
    - Grantors (optional `Role.GRANTOR`)
-6. Workflow recap
 
+6. Workflow recap
 - Teacher screens, red‑flagged + low‑income students trigger parent link.
 - Parent applies.
 - School admin verifies income (required), then forwards to SAPA.
 - SAPA approves in batches, optionally selecting an active grant.
 - Inditech creates shipments for schools/months; logistics dispatches; logistics or school confirms delivery.
+

@@ -1,12 +1,7 @@
 import os, time
 import redis
 
-_RURL = (
-    os.getenv("RATELIMIT_REDIS_URL")
-    or os.getenv("CELERY_BROKER_URL")
-    or "redis://localhost:6379/0"
-)
-
+_RURL = os.getenv("RATELIMIT_REDIS_URL") or os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 _r = redis.Redis.from_url(_RURL)
 
 class RateLimitExceeded(Exception): ...

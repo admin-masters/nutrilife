@@ -10,11 +10,7 @@ def beat_heartbeat():
     return "ok"
 
 def _mysqldump_to_file(path: str):
-    host = os.getenv("MYSQL_HOST") or os.getenv("DB_HOST") or "127.0.0.1"
-    if host == "db":
-        host = "127.0.0.1"
-
-
+    host = os.getenv("MYSQL_HOST") or os.getenv("DB_HOST","db")
     port = os.getenv("MYSQL_PORT","3306")
     db = os.getenv("MYSQL_DATABASE","nutrilift")
     user = os.getenv("MYSQL_USER","nutrilift")

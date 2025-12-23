@@ -8,6 +8,7 @@ class Role(models.TextChoices):
     SAPA_ADMIN = "SAPA_ADMIN", "SAPA Admin"
     INDITECH  = "INDITECH", "Inditech"
     SAPA_PGC = "SAPA_PGC", "SAPA Governing Committee"
+    GRANTOR = "GRANTOR", "Grantor"
     MANUFACTURER = "MANUFACTURER", "Manufacturer"
     LOGISTICS = "LOGISTICS", "Logistics Partner"
 
@@ -32,7 +33,7 @@ class Organization(models.Model):
         NGO = "NGO", "NGO"
         SAPA = "SAPA", "SAPA"
         INDITECH = "INDITECH", "Inditech"
-        
+        GRANTOR = "GRANTOR", "Grantor"
         MANUFACTURER = "MANUFACTURER", "Manufacturer"
         LOGISTICS = "LOGISTICS", "Logistics Partner"
 

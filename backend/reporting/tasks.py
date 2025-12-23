@@ -34,7 +34,10 @@ def _make_school_performance_csv(org: Organization, start_day, end_day) -> bytes
 
 @shared_task
 def send_due_school_reports():
-
+    """
+    For each school where next_due_on <= today, email the last-6-month performance report
+    to eSAPA/grantors and schedule next_due_on + 180 days.
+    """
     today = timezone.now().date()
     to_recipients = [e.strip() for e in (os.getenv("ESAPA_REPORT_TO","").split(",")) if e.strip()]
     if not to_recipients:
