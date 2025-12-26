@@ -21,6 +21,19 @@ SETTINGS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = SETTINGS_FILE.parent.parent.parent  # Go up: nutrilift -> backend -> project_root
 load_dotenv(PROJECT_ROOT / ".env", override=False)
 
+# ------------------------------------------------------------------------------
+# Hard override: use the systemd Redis running on the same host.
+#
+# EC2 runs Redis bound to 127.0.0.1:6379. The deployment environment may still
+# have Docker-era URLs like redis://redis:6379/0, which will not resolve on
+# non-Docker hosts. We cannot edit the server .env, so we force these here.
+# ------------------------------------------------------------------------------
+REDIS_HOST = "127.0.0.1"
+REDIS_PORT = 6379
+
+os.environ["CELERY_BROKER_URL"] = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+os.environ["CELERY_RESULT_BACKEND"] = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+os.environ["RATELIMIT_REDIS_URL"] = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
 
 # Auto-detect if running in Docker or locally
 def _is_docker():
@@ -38,20 +51,20 @@ def _is_docker():
 IS_DOCKER = _is_docker()
 
 # Auto-adjust DB_HOST and Redis URLs for local development
-if not IS_DOCKER:
-    # Override Docker-specific hostnames with localhost equivalents
-    if os.getenv("DB_HOST") == "db":
-        os.environ["DB_HOST"] = "127.0.0.1"
-    if os.getenv("CELERY_BROKER_URL", "").startswith("redis://redis:"):
-        os.environ["CELERY_BROKER_URL"] = "redis://127.0.0.1:6379/0"
-    if os.getenv("CELERY_RESULT_BACKEND", "").startswith("redis://redis:"):
-        os.environ["CELERY_RESULT_BACKEND"] = "redis://127.0.0.1:6379/1"
-    if os.getenv("MYSQL_HOST") == "db":
-        os.environ["MYSQL_HOST"] = "127.0.0.1"
+# if not IS_DOCKER:
+#     # Override Docker-specific hostnames with localhost equivalents
+#     if os.getenv("DB_HOST") == "db":
+#         os.environ["DB_HOST"] = "127.0.0.1"
+#     if os.getenv("CELERY_BROKER_URL", "").startswith("redis://redis:"):
+#         os.environ["CELERY_BROKER_URL"] = "redis://127.0.0.1:6379/0"
+#     if os.getenv("CELERY_RESULT_BACKEND", "").startswith("redis://redis:"):
+#         os.environ["CELERY_RESULT_BACKEND"] = "redis://127.0.0.1:6379/1"
+#     if os.getenv("MYSQL_HOST") == "db":
+#         os.environ["MYSQL_HOST"] = "127.0.0.1"
 
-    # Rate limiting Redis URL is independent of Celery and must be normalized too
-    if os.getenv("RATELIMIT_REDIS_URL", "").startswith("redis://redis:"):
-        os.environ["RATELIMIT_REDIS_URL"] = "redis://127.0.0.1:6379/0"
+#     # Rate limiting Redis URL is independent of Celery and must be normalized too
+#     if os.getenv("RATELIMIT_REDIS_URL", "").startswith("redis://redis:"):
+#         os.environ["RATELIMIT_REDIS_URL"] = "redis://127.0.0.1:6379/0"
 # PHASE 11
 LOG_JSON = os.getenv("LOG_JSON", "1") == "1"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
