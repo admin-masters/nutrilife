@@ -4,7 +4,7 @@ import redis
 _RURL = (
     os.getenv("RATELIMIT_REDIS_URL")
     or os.getenv("CELERY_BROKER_URL")
-    or "redis://localhost:6379/0"
+    or "redis://127.0.0.1:6379/0"
 )
 
 _r = redis.Redis.from_url(_RURL)
