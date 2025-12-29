@@ -5,51 +5,153 @@
   <meta charset="utf-8">
   <title>Teacher Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>table{width:100%;border-collapse:collapse}td,th{padding:.5rem;border-bottom:1px solid #eee}</style>
-</head>
-<body>
-  <h2>Teacher Portal</h2>
-  <p>
-    <a href="{% url 'teacher_add_student_token' teacher_token %}{% if selected_classroom %}?classroom={{ selected_classroom }}{% endif %}">
-      + Add student
-    </a>
-  </p>
-  
-  <form method="get" action=".">
-    <label>Classroom:
-      <select name="classroom">
-        <option value="">All</option>
-        {% for c in classrooms %}
-          <option value="{{ c.id }}" {% if selected_classroom == c.id %}selected{% endif %}>{{ c }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>Risk:
-      <select name="risk">
-        <option value="">All</option>
-        <option value="GREEN" {% if selected_risk == "GREEN" %}selected{% endif %}>Green</option>
-        <option value="AMBER" {% if selected_risk == "AMBER" %}selected{% endif %}>Amber</option>
-        <option value="RED" {% if selected_risk == "RED" %}selected{% endif %}>Red</option>
-      </select>
-    </label>
-    <label>Search: <input type="text" name="q" value="{{ q|default:'' }}"></label>
-    <button type="submit">Apply</button>
-  </form>
 
-  <table>
-    <thead><tr><th>Name</th><th>Class</th><th>Last risk</th><th>Action</th></tr></thead>
-    <tbody>
-    {% for s in students %}
-      <tr>
-        <td>{{ s.full_name }}</td>
-        <td>{{ s.classroom|default:"-" }}</td>
-        <td>{% if s.last_risk %}{{ s.last_risk }}{% else %}-{% endif %}</td>
-        <td><a href="{% url 'screening_create' s.id %}">Fill a Screening</a></td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="4">No students yet</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 16px; background: #fafafa; color: #111; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    h2 { margin: 0 0 8px 0; }
+    .muted { color: #666; font-size: 14px; margin: 4px 0 0 0; }
+
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0; }
+    .toolbar form { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+    label { font-size: 13px; color: #333; display: block; margin-bottom: 4px; }
+    select, input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 8px; background: #fff; min-width: 180px; }
+    button, a.button { display: inline-block; padding: 9px 12px; border: 1px solid #ddd; border-radius: 10px; background: #fff; color: #111; text-decoration: none; cursor: pointer; }
+    button.primary, a.button.primary { border-color: #111; background: #111; color: #fff; }
+    a.button:hover, button:hover { opacity: 0.92; }
+
+    .messages { margin: 12px 0; padding: 0; list-style: none; }
+    .messages li { margin: 6px 0; padding: 10px 12px; border-radius: 10px; background: #fff; border: 1px solid #eee; }
+    .messages li.success { border-color: #cfe9d6; background: #f2fbf5; }
+    .messages li.warning { border-color: #ffe3b3; background: #fff8ea; }
+    .messages li.error { border-color: #ffd0d0; background: #fff2f2; }
+
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; vertical-align: top; }
+    th { background: #fcfcfc; font-weight: 650; }
+    tr:last-child td { border-bottom: none; }
+
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; border: 1px solid #ddd; background: #fff; }
+    .badge.green { border-color: #bfe8c6; background: #eefbf1; }
+    .badge.yellow { border-color: #ffe3b3; background: #fff8ea; }
+    .badge.red { border-color: #ffd0d0; background: #fff2f2; }
+
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h2>Teacher Portal</h2>
+        <p class="muted">Select a student to complete the new Growth & Health Screening (Sections A–F).</p>
+      </div>
+
+      <div>
+        <a class="button primary"
+           href="{% url 'teacher_add_student_token' teacher_token %}{% if selected_classroom %}?classroom={{ selected_classroom }}{% endif %}">
+          + Add student
+        </a>
+      </div>
+    </header>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for m in messages %}
+          <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="toolbar">
+      <form method="get">
+        <div>
+          <label for="classroom">Classroom</label>
+          <select id="classroom" name="classroom">
+            <option value="">All</option>
+            {% for c in classrooms %}
+              <option value="{{ c.id }}" {% if selected_classroom == c.id %}selected{% endif %}>
+                {{ c.grade }}{% if c.division %}-{{ c.division }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="risk">Last Status</label>
+          <select id="risk" name="risk">
+            <option value="" {% if not selected_risk %}selected{% endif %}>All</option>
+            <option value="GREEN" {% if selected_risk == "GREEN" %}selected{% endif %}>GREEN</option>
+            <option value="YELLOW" {% if selected_risk == "YELLOW" %}selected{% endif %}>YELLOW</option>
+            <option value="RED" {% if selected_risk == "RED" %}selected{% endif %}>RED</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="q">Search</label>
+          <input id="q" type="text" name="q" value="{{ q|default:'' }}" placeholder="Name or Student ID">
+        </div>
+
+        <div>
+          <button class="primary" type="submit">Apply</button>
+          <a class="button" href="{% url 'teacher_portal' %}">Clear</a>
+        </div>
+      </form>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 34%;">Student</th>
+          <th style="width: 22%;">Class</th>
+          <th style="width: 16%;">Last Status</th>
+          <th style="width: 28%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+          <tr>
+            <td>
+              <div style="font-weight: 650;">{{ s.full_name }}</div>
+              {% if s.student_code %}<div class="muted">ID: {{ s.student_code }}</div>{% endif %}
+            </td>
+            <td>
+              {% if s.classroom %}
+                {{ s.classroom.grade }}{% if s.classroom.division %}-{{ s.classroom.division }}{% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if s.last_risk %}
+                {% if s.last_risk == "GREEN" %}
+                  <span class="badge green">GREEN</span>
+                {% elif s.last_risk == "YELLOW" or s.last_risk == "AMBER" %}
+                  <span class="badge yellow">YELLOW</span>
+                {% elif s.last_risk == "RED" %}
+                  <span class="badge red">RED</span>
+                {% else %}
+                  <span class="badge">{{ s.last_risk }}</span>
+                {% endif %}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              <div class="row-actions">
+                <a class="button primary" href="{% url 'screening_create' s.id %}">Fill Screening</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4">No students found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </body>
 </html>

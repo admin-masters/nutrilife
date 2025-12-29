@@ -268,116 +268,20 @@ def send_compliance_reminder(supply) -> MessageLog:
     log.save(update_fields=["provider_msg_id","status","sent_at","updated_at"])
     return log
 
-# @transaction.atomic
-# def send_redflag_assistance(screening: Screening) -> MessageLog:
-#     org: Organization = screening.organization
-#     guardian, phone = _guardian_and_phone(screening)
-#     if not phone:
-#         raise ValueError("Missing guardian phone")
+def prepare_screening_status_click_to_chat(screening: Screening):
+    """
+    Prepare the Click-to-Chat WhatsApp message for the parent.
 
-#     lang = choose_language(getattr(guardian, "preferred_language", None),
-#                            getattr(org, "locale", None))
-#     flags_txt = flags_to_text(screening.red_flags, lang)
-#     video = edu_video_url(lang)
-#     apply_url = assist_apply_url(screening.student_id, screening.id, lang)
+    REQUIRED business rule:
+      - If the student is classified as RED AND is low-income -> send the assistance template (RED_ASSIST_V1)
+      - In every other case (GREEN, YELLOW, or RED non low-income) -> send the education template (RED_EDU_V1)
 
-#     components = {
-#         "body": [
-#             screening.student.full_name,  # {{1}}
-#             flags_txt,                    # {{2}}
-#             video,                        # {{3}}
-#             apply_url                     # {{4}}
-#         ],
-#         "buttons": [video, apply_url]     # Button 0 -> video, Button 1 -> apply
-#     }
+    This function does NOT send via provider; it only creates a MessageLog and returns the
+    pre-filled text used in the WhatsApp Click-to-Chat link.
+    """
+    level = (screening.risk_level or "GREEN").upper()
+    is_low_income = bool(getattr(screening, "is_low_income_at_screen", False))
 
-#     # --- Idempotency ---
-#     idem = _make_idem_key("red_assist", phone, screening.id)
-#     existing = MessageLog.objects.filter(idempotency_key=idem).first()
-#     if existing:
-#         return existing
-
-#     # --- Rate limiting ---
-#     check_global_per_min()
-#     check_per_phone_daily(phone, "RED_ASSIST_V1")
-
-#     log = MessageLog.objects.create(
-#         organization=org,
-#         to_phone_e164=phone,
-#         template_code="RED_ASSIST_V1",
-#         language=lang,
-#         payload={
-#             "screening_id": screening.id,
-#             "flags": screening.red_flags,
-#             "video": video,
-#             "apply_url": apply_url,
-#             "_components": components,
-#         },
-#         related_screening=screening,
-#         idempotency_key=idem,
-#         status=MessageLog.Status.QUEUED,
-#     )
-
-#     from .tasks import send_message_task  # local import to avoid cycle
-#     send_message_task.delay(log.id)
-#     return log
-
-# @transaction.atomic
-# def send_compliance_reminder(supply) -> MessageLog:
-#     """
-#     Sends a WhatsApp reminder to complete Day-27 compliance.
-#     """
-#     from django.urls import reverse
-
-#     org = supply.enrollment.organization
-#     student = supply.enrollment.student
-#     guardian = student.primary_guardian
-#     phone = guardian.phone_e164 if guardian else ""
-#     if not phone:
-#         raise ValueError("Missing guardian phone")
-
-#     base = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
-#     link = f"{base}{reverse('program:compliance_form', args=[supply.qr_token])}"
-
-#     lang = choose_language(getattr(guardian, "preferred_language", None),
-#                            getattr(org, "locale", None))
-
-#     components = {
-#         # Adjust placeholders to your approved WABA template
-#         "body": [
-#             student.full_name,  # {{1}} Child Name
-#             link,               # {{2}} Link to compliance form
-#         ],
-#         "buttons": [link],     # URL button 0 -> {{1}} dynamic URL
-#     }
-
-#     # --- Idempotency ---
-#     # Keyed by phone + supply so one reminder per supply per guardian is de-duped.
-#     idem = _make_idem_key("compliance_reminder", phone, supply.id)
-#     existing = MessageLog.objects.filter(idempotency_key=idem).first()
-#     if existing:
-#         return existing
-
-#     # --- Rate limiting ---
-#     check_global_per_min()
-#     check_per_phone_daily(phone, "COMPLIANCE_REMINDER_V1")
-
-#     log = MessageLog.objects.create(
-#         organization=org,
-#         to_phone_e164=phone,
-#         template_code="COMPLIANCE_REMINDER_V1",
-#         language=lang,
-#         payload={
-#             "supply_id": supply.id,
-#             "student": student.full_name,
-#             "link": link,
-#             "_components": components,
-#         },
-#         related_supply=supply,
-#         idempotency_key=idem,
-#         status=MessageLog.Status.QUEUED,
-#     )
-
-#     from .tasks import send_message_task  # local import to avoid cycle
-#     send_message_task.delay(log.id)
-#     return log
+    if level == "RED" and is_low_income:
+        return prepare_redflag_assistance_click_to_chat(screening)
+    return prepare_redflag_education_click_to_chat(screening)

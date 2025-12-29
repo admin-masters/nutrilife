@@ -1,31 +1,140 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>Result – {{ s.student.full_name }}</title></head>
+<head>
+  <meta charset="utf-8">
+  <title>Result – {{ s.student.full_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 16px; background: #fafafa; color: #111; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 16px; margin: 12px 0; }
+    h2 { margin: 0; }
+    .muted { color: #666; font-size: 14px; margin: 6px 0 0 0; }
+
+    .badge { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 13px; border: 1px solid #ddd; background: #fff; font-weight: 650; }
+    .green { border-color: #bfe8c6; background: #eefbf1; }
+    .yellow { border-color: #ffe3b3; background: #fff8ea; }
+    .red { border-color: #ffd0d0; background: #fff2f2; }
+
+    .messages { margin: 12px 0; padding: 0; list-style: none; }
+    .messages li { margin: 6px 0; padding: 10px 12px; border-radius: 10px; background: #fff; border: 1px solid #eee; }
+    .messages li.success { border-color: #cfe9d6; background: #f2fbf5; }
+    .messages li.warning { border-color: #ffe3b3; background: #fff8ea; }
+    .messages li.error { border-color: #ffd0d0; background: #fff2f2; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    .kv { font-size: 14px; }
+    .kv strong { display: inline-block; min-width: 150px; color: #333; }
+
+    ul.flags { margin: 10px 0 0 18px; }
+    ul.flags li { margin: 4px 0; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    a.button {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #111;
+      text-decoration: none;
+    }
+    a.button.primary { background: #111; color: #fff; border-color: #111; }
+  </style>
+</head>
+
 <body>
-  {% if messages %}
-    <ul>
-      {% for m in messages %}<li>{{ m }}</li>{% endfor %}
-    </ul>
-  {% endif %}
-
-  <h3>Result: {{ s.risk_level }}</h3>
-<p><strong>Red flags:</strong> {{ s.red_flags|join:", " }} {% if not s.red_flags %}none{% endif %}</p>
-
-{% if s.student.primary_guardian and s.student.primary_guardian.phone_e164 %}
-  <p>
-    <strong>Parent message:</strong>
-    {% if last_message %}
-      {{ last_message.template_code }} → {{ last_message.get_status_display }}
-      {% if last_message.sent_at %} at {{ last_message.sent_at }}{% endif %}
-    {% else %}
-      Queued automatically based on screening results.
+  <div class="container">
+    {% if messages %}
+      <ul class="messages">
+        {% for m in messages %}
+          <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+      </ul>
     {% endif %}
-  </p>
-{% else %}
-  <p><em>No parent WhatsApp number on file. Go back and add it.</em></p>
-{% endif %}
 
-<p><a href="{% url 'teacher_portal' %}">Back to Teacher Portal</a></p>
+    <div class="card">
+      <h2>Screening Result – {{ s.student.full_name }}</h2>
+      <p class="muted">Screened at: {{ s.screened_at }}</p>
 
+      <div style="margin-top: 10px;">
+        {% if s.risk_level == "GREEN" %}
+          <span class="badge green">GREEN</span>
+        {% elif s.risk_level == "YELLOW" %}
+          <span class="badge yellow">YELLOW</span>
+        {% elif s.risk_level == "RED" %}
+          <span class="badge red">RED</span>
+        {% else %}
+          <span class="badge">{{ s.risk_level }}</span>
+        {% endif %}
+      </div>
+
+      {% if teacher_view %}
+        <p style="margin-top: 10px;"><strong>Teacher view:</strong> {{ teacher_view }}</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3 style="margin: 0 0 10px 0;">Key measurements</h3>
+      <div class="grid">
+        <div class="kv"><strong>Age (years):</strong> {{ s.age_years|default:"-" }}</div>
+        <div class="kv"><strong>Age (months):</strong> {{ s.age_months|default:"-" }}</div>
+        <div class="kv"><strong>Height (cm):</strong> {{ s.height_cm|default:"-" }}</div>
+        <div class="kv"><strong>Weight (kg):</strong> {{ s.weight_kg|default:"-" }}</div>
+        <div class="kv"><strong>MUAC (cm):</strong> {{ s.muac_cm|default:"-" }}</div>
+        <div class="kv"><strong>BMI:</strong> {{ s.bmi|default:"-" }}</div>
+        <div class="kv"><strong>BAZ:</strong> {{ s.baz|default:"-" }}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin: 0 0 10px 0;">Triggers / flags</h3>
+
+      {% if s.red_flags and s.red_flags|length > 0 %}
+        <ul class="flags">
+          {% for f in s.red_flags %}
+            <li>{{ f }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No flags recorded.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3 style="margin: 0 0 10px 0;">Parent WhatsApp</h3>
+
+      {% if s.student.primary_guardian and s.student.primary_guardian.phone_e164 %}
+        <p class="muted">Parent number: {{ s.student.primary_guardian.phone_e164 }}</p>
+
+        <div class="actions">
+          <a class="button primary" href="{% url 'send_parent_whatsapp' s.id %}">Send WhatsApp to Parent</a>
+
+          {% if last_message %}
+            <a class="button" href="{% url 'whatsapp_preview' last_message.id %}?next={% url 'screening_result' s.id %}">
+              Open last message preview
+            </a>
+          {% endif %}
+
+          <a class="button" href="{% url 'teacher_portal' %}">Back to Teacher Portal</a>
+        </div>
+
+        {% if last_message %}
+          <p class="muted" style="margin-top: 10px;">
+            Last message: <strong>{{ last_message.template_code }}</strong> → {{ last_message.get_status_display }}
+            {% if last_message.sent_at %}(sent at {{ last_message.sent_at }}){% endif %}
+          </p>
+        {% endif %}
+
+      {% else %}
+        <p><em>No parent WhatsApp number on file. Please go back and add it.</em></p>
+        <div class="actions">
+          <a class="button" href="{% url 'teacher_portal' %}">Back to Teacher Portal</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
 </body>
 </html>

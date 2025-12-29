@@ -1,29 +1,283 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>Screening: {{ student.full_name }}</title>
-<style>label{display:block;margin:.5rem 0}</style></head>
+<head>
+  <meta charset="utf-8">
+  <title>Screening – {{ student.full_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 16px; background: #fafafa; color: #111; }
+    .container { max-width: 980px; margin: 0 auto; }
+    h2 { margin: 0 0 4px 0; }
+    .muted { color: #666; font-size: 14px; margin: 4px 0 0 0; }
+    form { background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 16px; }
+
+    fieldset { border: 1px solid #eee; border-radius: 12px; padding: 12px; margin: 14px 0; }
+    legend { padding: 0 8px; font-weight: 700; }
+    .section-hint { margin: 8px 0 0 0; color: #666; font-size: 13px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+    .field { margin: 8px 0; }
+    .field label { display: block; font-size: 13px; color: #333; margin-bottom: 4px; }
+    .field input[type="text"], .field input[type="number"], .field input[type="date"], .field select, .field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 9px 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .radio ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 14px; flex-wrap: wrap; }
+    .radio li { margin: 0; }
+    .radio label { display: inline; font-size: 14px; color: #111; margin: 0; }
+
+    .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-top: 6px; }
+    @media (max-width: 720px) { .checks { grid-template-columns: 1fr; } }
+    .check { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #f0f0f0; border-radius: 10px; background: #fcfcfc; }
+    .check label { margin: 0; display: inline; font-size: 14px; color: #111; }
+
+    .errors { color: #b00020; font-size: 13px; margin-top: 6px; }
+    .nonfield { color: #b00020; background: #fff2f2; border: 1px solid #ffd0d0; padding: 10px 12px; border-radius: 10px; margin: 10px 0; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    button, a.button {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #111;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    button.primary { background: #111; color: #fff; border-color: #111; }
+  </style>
+</head>
+
 <body>
-  <h3>Screening – {{ student.full_name }}</h3>
-  <form method="post">{% csrf_token %}
-    <label>Parent WhatsApp: {{ form.parent_phone_e164 }}</label>
-    <label>Gender: {{ form.gender }}</label>
-    <label>Age (years): {{ form.age_years }}</label>
-    <label>Height (cm): {{ form.height_cm }}</label>
-    <label>Weight (kg): {{ form.weight_kg }}</label>
-    <label>Low-income family? {{ form.is_low_income_at_screen }}</label>
+  <div class="container">
+    <h2>Screening – {{ student.full_name }}</h2>
+    <p class="muted">Complete Sections A–F, then submit to compute GREEN / YELLOW / RED.</p>
 
-    <fieldset>
-      <legend>Questions</legend>
-      {% for field in mcq_fields %}
-        <label>{{ field.label }} {{ field }}</label>
-        {% if field.errors %}
-          <div style="color:#b00">{{ field.errors }}</div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="nonfield">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <!-- SECTION A -->
+      <fieldset>
+        <legend>Section A: Particulars</legend>
+        <p class="section-hint">Student/teacher details required for the screening record.</p>
+
+        <div class="grid">
+          <div class="field">
+            <label for="{{ form.student_name.id_for_label }}">{{ form.student_name.label }}</label>
+            {{ form.student_name }}
+            {% if form.student_name.errors %}<div class="errors">{{ form.student_name.errors }}</div>{% endif %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.unique_student_id.id_for_label }}">{{ form.unique_student_id.label }}</label>
+            {{ form.unique_student_id }}
+            {% if form.unique_student_id.errors %}<div class="errors">{{ form.unique_student_id.errors }}</div>{% endif %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.dob.id_for_label }}">{{ form.dob.label }}</label>
+            {{ form.dob }}
+            {% if form.dob.errors %}<div class="errors">{{ form.dob.errors }}</div>{% endif %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.sex.id_for_label }}">{{ form.sex.label }}</label>
+            {{ form.sex }}
+            {% if form.sex.errors %}<div class="errors">{{ form.sex.errors }}</div>{% endif %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.parent_phone_e164.id_for_label }}">{{ form.parent_phone_e164.label }}</label>
+            {{ form.parent_phone_e164 }}
+            {% if form.parent_phone_e164.errors %}<div class="errors">{{ form.parent_phone_e164.errors }}</div>{% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- SECTION B -->
+      <fieldset>
+        <legend>Section B: Anthropometry</legend>
+        <p class="section-hint">
+          Enter one reading each for weight and height; the system will compute BMI and BAZ where applicable.
+          MUAC is used for ages 6–59 months only.
+        </p>
+
+        <div class="grid">
+          <div class="field">
+            <label for="{{ form.weight_kg_r1.id_for_label }}">{{ form.weight_kg_r1.label }}</label>
+            {{ form.weight_kg_r1 }}
+            {% if form.weight_kg_r1.errors %}<div class="errors">{{ form.weight_kg_r1.errors }}</div>{% endif %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.height_cm_r1.id_for_label }}">{{ form.height_cm_r1.label }}</label>
+            {{ form.height_cm_r1 }}
+            {% if form.height_cm_r1.errors %}<div class="errors">{{ form.height_cm_r1.errors }}</div>{% endif %}
+          </div>
+
+          <div class="field">
+            <label for="{{ form.muac_cm.id_for_label }}">{{ form.muac_cm.label }}</label>
+            {{ form.muac_cm }}
+            {% if form.muac_cm.errors %}<div class="errors">{{ form.muac_cm.errors }}</div>{% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+
+      <!-- SECTION C -->
+      <fieldset>
+        <legend>Section C: Quick Health Red Flags</legend>
+        <p class="section-hint">Tick any that apply. Any red-flag symptom may lead to RED status.</p>
+
+        <div class="checks">
+          <div class="check">{{ form.health_general_poor }} <label for="{{ form.health_general_poor.id_for_label }}">{{ form.health_general_poor.label }}</label></div>
+          <div class="check">{{ form.health_pallor }} <label for="{{ form.health_pallor.id_for_label }}">{{ form.health_pallor.label }}</label></div>
+          <div class="check">{{ form.health_fatigue_dizzy_faint }} <label for="{{ form.health_fatigue_dizzy_faint.id_for_label }}">{{ form.health_fatigue_dizzy_faint.label }}</label></div>
+          <div class="check">{{ form.health_breathlessness }} <label for="{{ form.health_breathlessness.id_for_label }}">{{ form.health_breathlessness.label }}</label></div>
+          <div class="check">{{ form.health_frequent_infections }} <label for="{{ form.health_frequent_infections.id_for_label }}">{{ form.health_frequent_infections.label }}</label></div>
+          <div class="check">{{ form.health_chronic_cough_or_diarrhea }} <label for="{{ form.health_chronic_cough_or_diarrhea.id_for_label }}">{{ form.health_chronic_cough_or_diarrhea.label }}</label></div>
+          <div class="check">{{ form.health_visible_worms }} <label for="{{ form.health_visible_worms.id_for_label }}">{{ form.health_visible_worms.label }}</label></div>
+          <div class="check">{{ form.health_dental_or_gum_or_ulcers }} <label for="{{ form.health_dental_or_gum_or_ulcers.id_for_label }}">{{ form.health_dental_or_gum_or_ulcers.label }}</label></div>
+          <div class="check">{{ form.health_night_vision_difficulty }} <label for="{{ form.health_night_vision_difficulty.id_for_label }}">{{ form.health_night_vision_difficulty.label }}</label></div>
+          <div class="check">{{ form.health_bone_or_joint_pain }} <label for="{{ form.health_bone_or_joint_pain.id_for_label }}">{{ form.health_bone_or_joint_pain.label }}</label></div>
+        </div>
+
+        {% if form.health_general_poor.errors or form.health_pallor.errors or form.health_fatigue_dizzy_faint.errors %}
+          <div class="errors">Please review the health checkbox inputs.</div>
         {% endif %}
-      {% endfor %}
-    </fieldset>
 
-    <button type="submit">Complete Screening</button>
-    <a href="{% url 'teacher_portal' %}">Cancel</a>
-  </form>
+        <div class="field radio" style="margin-top: 12px;">
+          <label for="{{ form.appetite.id_for_label }}">{{ form.appetite.label }}</label>
+          {{ form.appetite }}
+          {% if form.appetite.errors %}<div class="errors">{{ form.appetite.errors }}</div>{% endif %}
+        </div>
+
+        <fieldset style="margin-top: 12px;">
+          <legend>Girls only (Age 10+)</legend>
+          <p class="section-hint">Fill only if applicable (girls who have started menstruation).</p>
+
+          <div class="checks">
+            <div class="check">{{ form.menarche_started }} <label for="{{ form.menarche_started.id_for_label }}">{{ form.menarche_started.label }}</label></div>
+            <div class="check">{{ form.bleeding_clots }} <label for="{{ form.bleeding_clots.id_for_label }}">{{ form.bleeding_clots.label }}</label></div>
+          </div>
+
+          <div class="grid" style="margin-top: 8px;">
+            <div class="field">
+              <label for="{{ form.menarche_age_years.id_for_label }}">{{ form.menarche_age_years.label }}</label>
+              {{ form.menarche_age_years }}
+              {% if form.menarche_age_years.errors %}<div class="errors">{{ form.menarche_age_years.errors }}</div>{% endif %}
+            </div>
+            <div class="field">
+              <label for="{{ form.pads_per_day.id_for_label }}">{{ form.pads_per_day.label }}</label>
+              {{ form.pads_per_day }}
+              {% if form.pads_per_day.errors %}<div class="errors">{{ form.pads_per_day.errors }}</div>{% endif %}
+            </div>
+            <div class="field">
+              <label for="{{ form.cycle_length_days.id_for_label }}">{{ form.cycle_length_days.label }}</label>
+              {{ form.cycle_length_days }}
+              {% if form.cycle_length_days.errors %}<div class="errors">{{ form.cycle_length_days.errors }}</div>{% endif %}
+            </div>
+          </div>
+        </fieldset>
+      </fieldset>
+
+      <!-- SECTION D -->
+      <fieldset>
+        <legend>Section D: Diet Type & Diversity</legend>
+        <p class="section-hint">Answer Yes/No for each item. Low diversity contributes to YELLOW status.</p>
+
+        <div class="field radio">
+          <label for="{{ form.diet_type.id_for_label }}">{{ form.diet_type.label }}</label>
+          {{ form.diet_type }}
+          {% if form.diet_type.errors %}<div class="errors">{{ form.diet_type.errors }}</div>{% endif %}
+        </div>
+
+        <div class="grid" style="margin-top: 8px;">
+          <div class="field radio">
+            <label for="{{ form.breakfast_eaten.id_for_label }}">{{ form.breakfast_eaten.label }}</label>
+            {{ form.breakfast_eaten }}
+            {% if form.breakfast_eaten.errors %}<div class="errors">{{ form.breakfast_eaten.errors }}</div>{% endif %}
+          </div>
+
+          <div class="field radio">
+            <label for="{{ form.lunch_eaten.id_for_label }}">{{ form.lunch_eaten.label }}</label>
+            {{ form.lunch_eaten }}
+            {% if form.lunch_eaten.errors %}<div class="errors">{{ form.lunch_eaten.errors }}</div>{% endif %}
+          </div>
+        </div>
+        
+        <p class="section-hint" style="margin-top: 12px; font-weight: 700; color: #111;">
+          Did the student have the following in last 24 hours?
+        </p>
+
+        <div class="grid">
+          <div class="field radio"><label>{{ form.green_leafy_veg.label }}</label>{{ form.green_leafy_veg }}{% if form.green_leafy_veg.errors %}<div class="errors">{{ form.green_leafy_veg.errors }}</div>{% endif %}</div>
+          <div class="field radio"><label>{{ form.other_vegetables.label }}</label>{{ form.other_vegetables }}{% if form.other_vegetables.errors %}<div class="errors">{{ form.other_vegetables.errors }}</div>{% endif %}</div>
+
+          <div class="field radio"><label>{{ form.fruits.label }}</label>{{ form.fruits }}{% if form.fruits.errors %}<div class="errors">{{ form.fruits.errors }}</div>{% endif %}</div>
+          <div class="field radio"><label>{{ form.dal_pulses_beans.label }}</label>{{ form.dal_pulses_beans }}{% if form.dal_pulses_beans.errors %}<div class="errors">{{ form.dal_pulses_beans.errors }}</div>{% endif %}</div>
+
+          <div class="field radio"><label>{{ form.milk_curd.label }}</label>{{ form.milk_curd }}{% if form.milk_curd.errors %}<div class="errors">{{ form.milk_curd.errors }}</div>{% endif %}</div>
+          <div class="field radio"><label>{{ form.egg.label }}</label>{{ form.egg }}{% if form.egg.errors %}<div class="errors">{{ form.egg.errors }}</div>{% endif %}</div>
+
+          <div class="field radio"><label>{{ form.fish_chicken_meat.label }}</label>{{ form.fish_chicken_meat }}{% if form.fish_chicken_meat.errors %}<div class="errors">{{ form.fish_chicken_meat.errors }}</div>{% endif %}</div>
+          <div class="field radio"><label>{{ form.nuts_groundnuts.label }}</label>{{ form.nuts_groundnuts }}{% if form.nuts_groundnuts.errors %}<div class="errors">{{ form.nuts_groundnuts.errors }}</div>{% endif %}</div>
+
+          <div class="field radio"><label>{{ form.millet_whole_grains.label }}</label>{{ form.millet_whole_grains }}{% if form.millet_whole_grains.errors %}<div class="errors">{{ form.millet_whole_grains.errors }}</div>{% endif %}</div>
+          <div class="field radio"><label>{{ form.ssb_or_packaged_snacks.label }}</label>{{ form.ssb_or_packaged_snacks }}{% if form.ssb_or_packaged_snacks.errors %}<div class="errors">{{ form.ssb_or_packaged_snacks.errors }}</div>{% endif %}</div>
+        </div>
+      </fieldset>
+
+      <!-- SECTION E -->
+      <fieldset>
+        <legend>Section E: Program Enablers</legend>
+        <p class="section-hint">Deworming is a key enabler; missing deworming contributes to YELLOW status.</p>
+
+        <div class="grid">
+          <div class="field radio">
+            <label for="{{ form.deworming_taken.id_for_label }}">{{ form.deworming_taken.label }}</label>
+            {{ form.deworming_taken }}
+            {% if form.deworming_taken.errors %}<div class="errors">{{ form.deworming_taken.errors }}</div>{% endif %}
+          </div>
+          <div class="field">
+            <label for="{{ form.deworming_date.id_for_label }}">{{ form.deworming_date.label }}</label>
+            {{ form.deworming_date }}
+            {% if form.deworming_date.errors %}<div class="errors">{{ form.deworming_date.errors }}</div>{% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- SECTION F -->
+      <fieldset>
+        <legend>Section F: Food Security</legend>
+        <p class="section-hint">If “Often true” or “Sometimes true”, status becomes RED per logic.</p>
+
+        <div class="field radio">
+          <label for="{{ form.hunger_vital_sign.id_for_label }}">{{ form.hunger_vital_sign.label }}</label>
+          {{ form.hunger_vital_sign }}
+          {% if form.hunger_vital_sign.errors %}<div class="errors">{{ form.hunger_vital_sign.errors }}</div>{% endif %}
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button class="primary" type="submit">Complete Screening</button>
+        <a class="button" href="{% url 'teacher_portal' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
 </body>
 </html>

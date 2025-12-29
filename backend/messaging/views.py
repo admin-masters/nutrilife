@@ -86,7 +86,10 @@ def whatsapp_preview(request, log_id: int):
     payload = log.payload or {}
 
     # Build the prefilled text ONLY from current payload + links
-    if log.template_code == "RED_EDU_V1":
+    if payload.get("_prefill_text"):
+        text = str(payload.get("_prefill_text") or "").strip()
+    # Legacy flows
+    elif log.template_code == "RED_EDU_V1":
         body = (payload.get("_components", {}) or {}).get("body") or []
         text = "\n".join([str(x) for x in body if x])
     elif log.template_code == "RED_ASSIST_V1":
