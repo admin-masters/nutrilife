@@ -26,21 +26,7 @@
   </div>
 
   <form method="post">{% csrf_token %}
-    <div class="card">
-      <h4>Your details</h4>
-      <label>Parent/Guardian Full Name
-        <input type="text" name="parent_full_name" value="{{ form.parent_full_name.value|default:'' }}">
-      </label>
-      <label>WhatsApp Number (+countrycode…)
-        <input type="tel" name="parent_phone_e164" value="{{ form.parent_phone_e164.value|default:'' }}">
-      </label>
-      <h4>Address (optional)</h4>
-      <label>Address line 1 <input type="text" name="address_line1"></label>
-      <label>Address line 2 <input type="text" name="address_line2"></label>
-      <label>City <input type="text" name="city"></label>
-      <label>State <input type="text" name="state"></label>
-      <label>Postal Code <input type="text" name="postal_code"></label>
-    </div>
+    
 
     <div class="card">
       <h4>Consent</h4>

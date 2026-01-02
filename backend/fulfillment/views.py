@@ -32,9 +32,18 @@ def production_order_create(request):
             po = form.save(commit=False)
             po.created_by = request.user
             po.save()
-            audit_log(request.user, None, "PRODUCTION_ORDER_CREATED", target=po)
+            audit_org = po.manufacturer or getattr(request, "org", None)
+            if audit_org:
+                audit_log(
+                   user=request.user,
+                   org=audit_org,
+                   action="PRODUCTION_ORDER_CREATED",
+                   target=po,
+                   request=request,  # captures IP + User-Agent in the audit row
+                )
             messages.success(request, "Production order created.")
             return redirect(reverse("fulfillment:dashboard"))
+
     else:
         form = ProductionOrderForm()
     return render(request, "fulfillment/po_form.html", {"form": form})

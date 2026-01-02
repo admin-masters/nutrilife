@@ -9,6 +9,8 @@ from accounts.models import Role, Organization
 from .models import SchoolStatDaily, SchoolReportStatus
 from .services import period_summary, six_month_window_ending
 from django.contrib.auth.decorators import login_required
+from .services import period_summary, ensure_rollups_caught_up
+from assist.models import Application
 
 def _six_months():
     end = timezone.now().date()
@@ -121,3 +123,48 @@ def inditech_console(request):
     if not request.user.is_staff:
         return HttpResponseForbidden("Forbidden")
     return HttpResponse("Inditech Console")  # simple 200 for staff
+
+@require_roles(Role.INDITECH, allow_superuser=True)
+def inditech_school_applications(request, org_id: int, bucket: str):
+    """List supplement requests (assist.Application) for a school.
+
+    Buckets:
+      * pending  -> APPLIED + FORWARDED
+      * approved -> APPROVED
+      * rejected -> REJECTED
+    """
+    org = get_object_or_404(
+        Organization,
+        pk=org_id,
+        org_type__in=[Organization.OrgType.SCHOOL, Organization.OrgType.NGO],
+    )
+
+    bucket = (bucket or "").strip().lower()
+    if bucket == "pending":
+        statuses = [Application.Status.APPLIED, Application.Status.FORWARDED]
+        heading = "Pending applications"
+    elif bucket == "approved":
+        statuses = [Application.Status.APPROVED]
+        heading = "Approved applications"
+    elif bucket == "rejected":
+        statuses = [Application.Status.REJECTED]
+        heading = "Rejected applications"
+    else:
+        return HttpResponseForbidden("Invalid application bucket")
+
+    apps = (
+        Application.objects.filter(organization=org, status__in=statuses)
+        .select_related("organization", "student", "guardian")
+        .order_by("-applied_at")
+    )
+
+    return render(
+        request,
+        "reporting/inditech_school_applications.html",
+        {
+            "org": org,
+            "bucket": bucket,
+            "heading": heading,
+            "applications": apps,
+        },
+    )

@@ -8,7 +8,7 @@
     <div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem">
       <input type="text" readonly value="{{ teacher_link }}" style="flex:1;padding:.5rem;border:1px solid #d1d5db;border-radius:6px" onclick="this.select()">
       <a class="btn" href="{{ teacher_link }}" target="_blank" rel="noopener">Open</a>
-      <button class="btn" type="button" onclick="navigator.clipboard.writeText('{{ teacher_link }}')">Copy</button>
+      <button class="btn" type="button" onclick="copyTeacherLink('{{ teacher_link|escapejs }}', this)">Copy</button>
     </div>
     <p style="color:#6b7280;margin:.5rem 0 0 0">Unique per organization. Share this with teachers (they must be logged in and have the Teacher role).</p>
   </div>
@@ -22,6 +22,50 @@
     .btn{display:inline-block;padding:.35rem .7rem;border:1px solid #d1d5db;border-radius:6px;text-decoration:none}
     .btn-primary{background:#2563eb;border-color:#2563eb;color:#fff}
   </style>
+  <script>
+    function _fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+  
+    function copyTeacherLink(text, btnEl) {
+      const original =
+        (btnEl && btnEl.dataset && btnEl.dataset.originalText)
+          ? btnEl.dataset.originalText
+          : (btnEl ? btnEl.textContent : 'Copy');
+  
+      if (btnEl && btnEl.dataset && !btnEl.dataset.originalText) {
+        btnEl.dataset.originalText = original;
+      }
+  
+      const setStatus = (label) => {
+        if (!btnEl) return;
+        btnEl.textContent = label;
+        window.setTimeout(() => { btnEl.textContent = original; }, 1200);
+      };
+  
+      // Prefer Clipboard API (works best on HTTPS).
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+          .then(() => setStatus('Copied'))
+          .catch(() => setStatus(_fallbackCopy(text) ? 'Copied' : 'Copy failed'));
+        return;
+      }
+  
+      setStatus(_fallbackCopy(text) ? 'Copied' : 'Copy failed');
+    }
+  </script>
   
 </head>
 <body>

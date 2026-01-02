@@ -28,6 +28,12 @@
   <p style="margin-top:1rem">
     <a class="btn" href="{% url 'reporting:inditech_export_school_csv' org.id %}">Download performance report (CSV)</a>
   </p>
+  <h3>Supplement requests (Applications)</h3>
+  <p>
+    <a class="btn" href="{% url 'reporting:inditech_school_applications' org.id 'pending' %}">Pending applications</a>
+    <a class="btn" href="{% url 'reporting:inditech_school_applications' org.id 'approved' %}">Approved applications</a>
+    <a class="btn" href="{% url 'reporting:inditech_school_applications' org.id 'rejected' %}">Rejected applications</a>
+  </p>
 
   <h3>30‑day Screenings Trend</h3>
   <table>

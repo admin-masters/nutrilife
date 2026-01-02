@@ -166,7 +166,7 @@
           {% if form.appetite.errors %}<div class="errors">{{ form.appetite.errors }}</div>{% endif %}
         </div>
 
-        <fieldset style="margin-top: 12px;">
+        <fieldset id="girls-only-section" style="margin-top: 12px;">
           <legend>Girls only (Age 10+)</legend>
           <p class="section-hint">Fill only if applicable (girls who have started menstruation).</p>
 
@@ -279,5 +279,30 @@
       </div>
     </form>
   </div>
+  <script>
+    (function () {
+      const sexField = document.querySelector('[name="sex"]');
+      const girlsSection = document.getElementById('girls-only-section');
+      if (!sexField || !girlsSection) return;
+  
+      function setVisibility() {
+        const v = String(sexField.value || '').toUpperCase();
+        const show = (v === 'F' || v === 'FEMALE');
+        girlsSection.style.display = show ? '' : 'none';
+  
+        // If hidden, clear any previously-entered values.
+        if (!show) {
+          girlsSection.querySelectorAll('input, select, textarea').forEach((el) => {
+            if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+            else el.value = '';
+          });
+        }
+      }
+  
+      sexField.addEventListener('change', setVisibility);
+      setVisibility();
+    })();
+  </script>
+  
 </body>
 </html>

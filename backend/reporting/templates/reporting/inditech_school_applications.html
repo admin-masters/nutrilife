@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ org.name }} – {{ heading }}</title>
+  <style>
+    body{font-family:system-ui;max-width:1100px;margin:0 auto;padding:1rem}
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{padding:.5rem;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+    .btn{border:1px solid #d1d5db;border-radius:8px;padding:.35rem .6rem;text-decoration:none;display:inline-block}
+    .btn.active{background:#f3f4f6}
+    .muted{color:#6b7280}
+    .toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.75rem 0}
+  </style>
+</head>
+<body>
+  <h2>{{ org.name }} – {{ heading }}</h2>
+  <p class="muted">
+    <a class="btn" href="{% url 'reporting:inditech_school' org.id %}">← Back to school performance</a>
+  </p>
+
+  <div class="toolbar">
+    <a class="btn {% if bucket == 'pending' %}active{% endif %}" href="{% url 'reporting:inditech_school_applications' org.id 'pending' %}">Pending applications</a>
+    <a class="btn {% if bucket == 'approved' %}active{% endif %}" href="{% url 'reporting:inditech_school_applications' org.id 'approved' %}">Approved applications</a>
+    <a class="btn {% if bucket == 'rejected' %}active{% endif %}" href="{% url 'reporting:inditech_school_applications' org.id 'rejected' %}">Rejected applications</a>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Organization</th>
+        <th>Student</th>
+        <th>Guardian</th>
+        <th>Status</th>
+        <th>Source</th>
+        <th>Applied at</th>
+        <th>Forwarded at</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in applications %}
+      <tr>
+        <td>
+          {% if request.user.is_staff %}
+            <a href="{% url 'admin:assist_application_change' a.id %}">{{ a.id }}</a>
+          {% else %}
+            {{ a.id }}
+          {% endif %}
+        </td>
+        <td>{{ a.organization.name }}</td>
+        <td>{{ a.student.full_name }}</td>
+        <td>{{ a.guardian.full_name|default:"—" }}</td>
+        <td>{{ a.get_status_display }}</td>
+        <td>{{ a.get_source_display }}</td>
+        <td>{{ a.applied_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ a.forwarded_at|date:"Y-m-d H:i"|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8">No applications found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

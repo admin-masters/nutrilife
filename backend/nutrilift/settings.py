@@ -84,7 +84,7 @@ INSTALLED_APPS = [
     "assist",
     "program.apps.ProgramConfig",  # <- keep this dotted path
     "fulfillment",
-    "reporting",                   # sprint 8
+    "reporting.apps.ReportingConfig",                   # sprint 8
     "ops",                         # observability + backups
 ]
 

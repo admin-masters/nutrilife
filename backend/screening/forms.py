@@ -117,8 +117,17 @@ class NewScreeningForm(forms.ModelForm):
 
     # SECTION E
     deworming_taken = YesNoField("Deworming taken in last 6–12 months?")
-    deworming_date = forms.DateField(label="If yes, approx date", required=False,
-                                     widget=forms.DateInput(attrs={"type": "date"}))
+    _DEWORMING_MONTHS_CHOICES = [
+        ('', 'Select months'),
+        *[(str(i), f"{i} month" if i == 1 else f"{i} months") for i in range(1, 13)],
+    ]
+    deworming_date = forms.TypedChoiceField(
+        label="If yes, how many months ago?",
+        choices=_DEWORMING_MONTHS_CHOICES,
+        required=False,
+        coerce=lambda x: int(x) if x else None,
+        widget=forms.Select,
+    )
 
     # SECTION F
     hunger_vital_sign = forms.ChoiceField(
@@ -253,7 +262,7 @@ class NewScreeningForm(forms.ModelForm):
 
             # E
             "deworming_taken": data.get("deworming_taken"),
-            "deworming_date": str(data.get("deworming_date")) if data.get("deworming_date") else None,
+            "deworming_date": data.get("deworming_date"),
 
             # F
             "hunger_vital_sign": data.get("hunger_vital_sign"),
