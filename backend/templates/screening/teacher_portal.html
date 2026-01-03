@@ -69,7 +69,8 @@
       <form method="get">
         <div>
           <label for="classroom">Classroom</label>
-          <select id="classroom" name="classroom">
+          <select id="classroom" name="classroom" onchange="this.form.submit()">
+
             <option value="">All</option>
             {% for c in classrooms %}
               <option value="{{ c.id }}" {% if selected_classroom == c.id %}selected{% endif %}>
@@ -81,7 +82,7 @@
 
         <div>
           <label for="risk">Last Status</label>
-          <select id="risk" name="risk">
+          <select id="risk" name="risk" onchange="this.form.submit()">
             <option value="" {% if not selected_risk %}selected{% endif %}>All</option>
             <option value="GREEN" {% if selected_risk == "GREEN" %}selected{% endif %}>GREEN</option>
             <option value="YELLOW" {% if selected_risk == "YELLOW" %}selected{% endif %}>YELLOW</option>
@@ -107,6 +108,7 @@
           <th style="width: 34%;">Student</th>
           <th style="width: 22%;">Class</th>
           <th style="width: 16%;">Last Status</th>
+          <th style="width: 14%;">Supplements</th>
           <th style="width: 28%;">Actions</th>
         </tr>
       </thead>
@@ -140,6 +142,13 @@
               {% endif %}
             </td>
             <td>
+              {% if s.last_risk == "RED" and s.supplements_granted %}
+                Granted
+              {% else %}
+                Not Granted
+              {% endif %}
+            </td>
+            <td>
               <div class="row-actions">
                 <a class="button primary" href="{% url 'screening_create' s.id %}">Fill Screening</a>
               </div>
@@ -147,7 +156,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="4">No students found.</td>
+            <td colspan="5">No students found.</td>
           </tr>
         {% endfor %}
       </tbody>

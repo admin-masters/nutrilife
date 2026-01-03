@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Q, OuterRef, Subquery
+from django.db.models import Q, OuterRef, Subquery, Exists
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -21,6 +21,7 @@ from .decorators import require_teacher_or_public
 from .forms import AddStudentForm, NewScreeningForm
 from .models import Screening
 from .services import compute_risk
+from assist.models import Application
 
 def teacher_portal_token(request, token: str):
     org = get_object_or_404(Organization, screening_link_token=token)
@@ -62,9 +63,29 @@ def teacher_portal(request):
     risk = request.GET.get("risk")  # GREEN|YELLOW|RED
     q = (request.GET.get("q") or "").strip()
 
-    last_screening = Screening.objects.filter(student=OuterRef("pk")).order_by("-screened_at").values("risk_level")[:1]
-    students = Student.objects.filter(organization=org).annotate(last_risk=Subquery(last_screening))
-
+    last_screening = (
+    Screening.objects
+        .filter(student=OuterRef("pk"))
+        .order_by("-screened_at")
+        .values("risk_level")[:1]
+    )
+    approved_application = (
+        Application.objects
+        .filter(
+            organization=org,
+            student=OuterRef("pk"),
+            status=Application.Status.APPROVED,
+        )
+    )
+    students = (
+        Student.objects
+        .filter(organization=org)
+        .annotate(
+            last_risk=Subquery(last_screening),
+            supplements_granted=Exists(approved_application),
+        )
+    )
+    
     if classroom_id:
         students = students.filter(classroom_id=classroom_id)
     if risk in {"GREEN", "YELLOW", "RED"}:

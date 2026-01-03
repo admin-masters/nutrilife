@@ -232,9 +232,19 @@
           <div class="field radio"><label>{{ form.dal_pulses_beans.label }}</label>{{ form.dal_pulses_beans }}{% if form.dal_pulses_beans.errors %}<div class="errors">{{ form.dal_pulses_beans.errors }}</div>{% endif %}</div>
 
           <div class="field radio"><label>{{ form.milk_curd.label }}</label>{{ form.milk_curd }}{% if form.milk_curd.errors %}<div class="errors">{{ form.milk_curd.errors }}</div>{% endif %}</div>
-          <div class="field radio"><label>{{ form.egg.label }}</label>{{ form.egg }}{% if form.egg.errors %}<div class="errors">{{ form.egg.errors }}</div>{% endif %}</div>
+          <div class="field radio" id="diet-egg-field">
+            <label>{{ form.egg.label }}</label>
+            {{ form.egg }}
+            {% if form.egg.errors %}<div class="errors">{{ form.egg.errors }}</div>{% endif %}
+          </div>
+          
 
-          <div class="field radio"><label>{{ form.fish_chicken_meat.label }}</label>{{ form.fish_chicken_meat }}{% if form.fish_chicken_meat.errors %}<div class="errors">{{ form.fish_chicken_meat.errors }}</div>{% endif %}</div>
+          <div class="field radio" id="diet-meat-field">
+            <label>{{ form.fish_chicken_meat.label }}</label>
+            {{ form.fish_chicken_meat }}
+            {% if form.fish_chicken_meat.errors %}<div class="errors">{{ form.fish_chicken_meat.errors }}</div>{% endif %}
+          </div>
+          
           <div class="field radio"><label>{{ form.nuts_groundnuts.label }}</label>{{ form.nuts_groundnuts }}{% if form.nuts_groundnuts.errors %}<div class="errors">{{ form.nuts_groundnuts.errors }}</div>{% endif %}</div>
 
           <div class="field radio"><label>{{ form.millet_whole_grains.label }}</label>{{ form.millet_whole_grains }}{% if form.millet_whole_grains.errors %}<div class="errors">{{ form.millet_whole_grains.errors }}</div>{% endif %}</div>
@@ -301,6 +311,48 @@
   
       sexField.addEventListener('change', setVisibility);
       setVisibility();
+    })();
+  </script>
+  <script>
+    (function () {
+      // Section D diet options constrained by diet type:
+      // - NON_VEG: show Egg + Fish/Chicken/Meat
+      // - LACTO_OVO: show Egg, hide Fish/Chicken/Meat
+      // - LACTO_VEG: hide Egg + Fish/Chicken/Meat
+      const dietTypeRadios = Array.from(document.querySelectorAll('input[name="diet_type"]'));
+      const eggField = document.getElementById('diet-egg-field');
+      const meatField = document.getElementById('diet-meat-field');
+  
+      if (!dietTypeRadios.length) return;
+  
+      function forceNoAnswer(fieldWrapper, fieldName) {
+        if (!fieldWrapper) return;
+        const no = fieldWrapper.querySelector(`input[name="${fieldName}"][value="no"]`);
+        if (no) no.checked = true;
+      }
+  
+      function setDietVisibility() {
+        const checked = document.querySelector('input[name="diet_type"]:checked');
+        const dietType = String(checked ? checked.value : '').toUpperCase();
+  
+        // Keep the default UI unchanged until diet type is chosen.
+        const knownTypes = new Set(['LACTO_VEG', 'LACTO_OVO', 'NON_VEG']);
+        const showEgg = !knownTypes.has(dietType) || dietType === 'LACTO_OVO' || dietType === 'NON_VEG';
+        const showMeat = !knownTypes.has(dietType) || dietType === 'NON_VEG';
+  
+        if (eggField) {
+          eggField.style.display = showEgg ? '' : 'none';
+          if (!showEgg) forceNoAnswer(eggField, 'egg');
+        }
+  
+        if (meatField) {
+          meatField.style.display = showMeat ? '' : 'none';
+          if (!showMeat) forceNoAnswer(meatField, 'fish_chicken_meat');
+        }
+      }
+  
+      dietTypeRadios.forEach((el) => el.addEventListener('change', setDietVisibility));
+      setDietVisibility();
     })();
   </script>
   
