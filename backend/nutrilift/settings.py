@@ -43,15 +43,15 @@ if not IS_DOCKER:
     if os.getenv("DB_HOST") == "db":
         os.environ["DB_HOST"] = "127.0.0.1"
     if os.getenv("CELERY_BROKER_URL", "").startswith("redis://redis:"):
-        os.environ["CELERY_BROKER_URL"] = "redis://127.0.0.1:6379/0"
+        os.environ["CELERY_BROKER_URL"] = "redis://localhost:6379/0"
     if os.getenv("CELERY_RESULT_BACKEND", "").startswith("redis://redis:"):
-        os.environ["CELERY_RESULT_BACKEND"] = "redis://127.0.0.1:6379/1"
+        os.environ["CELERY_RESULT_BACKEND"] = "redis://localhost:6379/1"
     if os.getenv("MYSQL_HOST") == "db":
         os.environ["MYSQL_HOST"] = "127.0.0.1"
 
     # Rate limiting Redis URL is independent of Celery and must be normalized too
     if os.getenv("RATELIMIT_REDIS_URL", "").startswith("redis://redis:"):
-        os.environ["RATELIMIT_REDIS_URL"] = "redis://127.0.0.1:6379/0"
+        os.environ["RATELIMIT_REDIS_URL"] = "redis://localhost:6379/0"
 # PHASE 11
 LOG_JSON = os.getenv("LOG_JSON", "1") == "1"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -63,8 +63,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-unsafe")
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
-#ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
-ALLOWED_HOSTS=["*"]
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
 
 INSTALLED_APPS = [
@@ -77,7 +77,7 @@ INSTALLED_APPS = [
     # project apps
     "accounts",
     "orgs",
-    "roster",
+    "roster.apps.RosterConfig",
     "screening",
     "audit",
     "messaging",
@@ -126,14 +126,10 @@ ASGI_APPLICATION = "nutrilift.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        #"NAME": os.getenv("MYSQL_DATABASE", "nutrilift"),
-        "NAME": "nutrilift",
-        #"USER": os.getenv("MYSQL_USER", "nutrilift"),
-        "USER": "nutrilift",
-        #"PASSWORD": os.getenv("MYSQL_PASSWORD", "nutrilift"),
-        "PASSWORD": "q&cWMVFaV%BV%SrQ",
-        #"HOST": os.getenv("DB_HOST", "127.0.0.1"),
-        "HOST": "localhost",
+        "NAME": os.getenv("MYSQL_DATABASE", "nutrilift"),
+        "USER": os.getenv("MYSQL_USER", "nutrilift"),
+        "PASSWORD": os.getenv("MYSQL_PASSWORD", "nutrilift"),
+        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
         "PORT": int(os.getenv("DB_PORT", "3306")),
         "OPTIONS": {
             "charset": "utf8mb4",
@@ -163,8 +159,8 @@ ADMIN_URL = os.getenv("ADMIN_URL", "admin")
 
 # CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 # CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/1")
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/1")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
 CELERY_TIMEZONE = TIME_ZONE
 
 # Celery beat schedules (copied as-is)

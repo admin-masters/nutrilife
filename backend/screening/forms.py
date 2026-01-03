@@ -287,22 +287,32 @@ class AddStudentForm(forms.Form):
         self.org = kwargs.pop("organization")
         super().__init__(*args, **kwargs)
 
-        grades_qs = (
+        # Prefer a natural grade ordering for dropdown UX:
+        # Nursery, 1..12, Other, then any non-standard values.
+        preferred_grade_order = ["Nursery"] + [str(i) for i in range(1, 13)] + ["Other"]
+        grade_rank = {g: i for i, g in enumerate(preferred_grade_order)}
+
+        grades = list(
             Classroom.objects.filter(organization=self.org)
             .values_list("grade", flat=True)
             .distinct()
-            .order_by("grade")
         )
-        self.fields["grade"].choices = [("", "Select grade")] + [(g, g) for g in grades_qs]
+        grades.sort(key=lambda g: (grade_rank.get(g, 999), str(g)))
+        self.fields["grade"].choices = [("", "Select grade")] + [(g, g) for g in grades]
 
-        initial_grade = self.initial.get("grade") or (grades_qs.first() if hasattr(grades_qs, "first") else None)
-        div_qs = (
+        initial_grade = self.initial.get("grade") or (grades[0] if grades else "")
+
+        # Prefer A..Z then Other for divisions/sections.
+        preferred_division_order = [chr(c) for c in range(ord("A"), ord("Z") + 1)] + ["Other"]
+        division_rank = {d: i for i, d in enumerate(preferred_division_order)}
+
+        divisions = list(
             Classroom.objects.filter(organization=self.org, grade=initial_grade)
             .values_list("division", flat=True)
-            .order_by("division")
             .distinct()
         )
-        self.fields["division"].choices = [("", "Select division")] + [(d, d or "—") for d in div_qs]
+        divisions.sort(key=lambda d: (division_rank.get(d or "", 999), str(d or "")))
+        self.fields["division"].choices = [("", "Select division")] + [(d, d or "—") for d in divisions]
 
     def clean(self):
         data = super().clean()

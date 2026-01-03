@@ -225,11 +225,17 @@ def teacher_add_student(request, token=None):
             initial["grade"] = c.grade
             initial["division"] = c.division
 
+    preferred_division_order = [chr(c) for c in range(ord("A"), ord("Z") + 1)] + ["Other"]
+    division_rank = {d: i for i, d in enumerate(preferred_division_order)}
     divisions_by_grade = {}
     for g, d in Classroom.objects.filter(organization=org).values_list("grade", "division"):
-        divisions_by_grade.setdefault(g, [])
-        if d not in divisions_by_grade[g]:
-            divisions_by_grade[g].append(d or "")
+        divisions_by_grade.setdefault(g, set()).add(d or "")
+    
+    # Convert sets -> sorted lists for JSON serialization.
+    divisions_by_grade = {
+        g: sorted(list(ds), key=lambda x: (division_rank.get(x, 999), str(x)))
+        for g, ds in divisions_by_grade.items()
+    }
 
     if request.method == "POST":
         student_form = AddStudentForm(request.POST, organization=org, initial=initial)
