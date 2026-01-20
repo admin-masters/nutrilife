@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Teacher Access Portal</title>
+  <style>
+    body{font-family:system-ui;max-width:520px;margin:0 auto;padding:1rem;background:#fafafa}
+    .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px}
+    label{display:block;margin-top:10px;font-weight:600}
+    input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin-top:6px}
+    button{margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;width:100%}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Teacher Access Portal</h2>
+    <p class="muted">Welcome to the Nutrilift screening system. Enter your details to continue.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      <label>Full Name</label>{{ form.full_name }}
+      <label>Email Address</label>{{ form.email }}
+
+      <label style="display:block;margin-top:12px;">
+        {{ form.accept_terms }} I accept the terms and conditions
+      </label>
+
+      <button type="submit">Continue to Sign In</button>
+    </form>
+  </div>
+</body>
+</html>

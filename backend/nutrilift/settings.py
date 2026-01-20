@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "fulfillment",
     "reporting.apps.ReportingConfig",                   # sprint 8
     "ops",                         # observability + backups
+    "screening_only",
 ]
 
 MIDDLEWARE = [
@@ -234,3 +235,15 @@ elif DJANGO_ENV in {"staging", "production"}:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 # ------------------------------------------------------------------------------
+
+# --- Screening-only program config ---
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
+
+# Optional content links used in onboarding UI
+SCREENING_GUIDE_URL = os.getenv("SCREENING_GUIDE_URL", "")
+SCREENING_TRAINING_VIDEO_URL = os.getenv("SCREENING_TRAINING_VIDEO_URL", "")
+
+# Academic year start month (India often June)
+SCREENING_ACADEMIC_YEAR_START_MONTH = int(os.getenv("SCREENING_ACADEMIC_YEAR_START_MONTH", "6"))
+

@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Screening Link Sharing Dashboard</title>
+  <style>
+    body{font-family:system-ui;max-width:980px;margin:0 auto;padding:1rem;background:#fafafa}
+    .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin-bottom:12px}
+    a.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;text-decoration:none}
+    textarea{width:100%;min-height:160px;padding:10px;border:1px solid #ddd;border-radius:10px}
+    .muted{color:#666}
+  </style>
+  <script>
+    function copyMessage() {
+      const el = document.getElementById("teacherMessage");
+      el.select();
+      document.execCommand("copy");
+      alert("Copied teacher message.");
+    }
+  </script>
+</head>
+<body>
+  <div class="card">
+    <h2>Nutrilift – Screening Link Sharing Dashboard</h2>
+    <p class="muted">Next steps: prepare staff, start screenings per schedule, and monitor progress on the dashboard.</p>
+  </div>
+
+  <div class="card">
+    <h3>School Screening Link</h3>
+    <p><a class="btn" href="{{ teacher_link }}" target="_blank">Open Teacher Link</a></p>
+    <p class="muted">{{ teacher_link }}</p>
+  </div>
+
+  <div class="card">
+    <h3>Pre-written Teacher Message</h3>
+    <textarea id="teacherMessage" readonly>{{ teacher_message }}</textarea>
+    <p style="margin-top:10px;">
+      <a class="btn" href="javascript:copyMessage()">Copy message</a>
+      <a class="btn" href="{{ dashboard_url }}">Go to Dashboard</a>
+    </p>
+  </div>
+</body>
+</html>

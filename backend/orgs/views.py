@@ -49,7 +49,11 @@ def _redirect_for_membership(mem: OrgMembership):
     role = mem.role
 
     if role == Role.ORG_ADMIN:
-        return redirect(reverse("assist:school_app_dashboard"))  # /assist/admin
+        try:
+            mem.organization.screening_only_profile
+            return redirect(reverse("screening_only:admin_link_dashboard"))
+        except Exception:
+            return redirect(reverse("assist:school_app_dashboard"))
 
     if role == Role.SAPA_ADMIN:
         return redirect(reverse("assist:sapa_approvals_dashboard"))  # /assist/sapa/approvals

@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Enrollment Successful</title>
+  <style>
+    body{font-family:system-ui;max-width:860px;margin:0 auto;padding:1rem;background:#fafafa}
+    .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px}
+    a.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;text-decoration:none}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Registration received</h2>
+    <p class="muted"><strong>{{ org.name }}</strong> is now enrolled.</p>
+    <p>Next step: Principal / Program Operator must sign in with the authorized Google email.</p>
+
+    <a class="btn" href="{{ admin_auth_url }}">Continue to Google Sign-in</a>
+  </div>
+</body>
+</html>

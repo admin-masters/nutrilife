@@ -31,6 +31,7 @@ urlpatterns = [
     path("", include("reporting.urls")),
     path("", include("ops.urls")),
     path("", include("orgs.urls")),
+    path("screening-program/", include("screening_only.urls")),
 ]
 
 

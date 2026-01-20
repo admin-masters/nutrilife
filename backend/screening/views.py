@@ -22,8 +22,16 @@ from .forms import AddStudentForm, NewScreeningForm
 from .models import Screening
 from .services import compute_risk
 from assist.models import Application
+import logging
+logger = logging.getLogger(__name__)
 
 def teacher_portal_token(request, token: str):
+    try:
+            org.screening_only_profile
+            return redirect(reverse("screening_only:teacher_access_portal", args=[org.screening_link_token]))
+    except Exception:
+            pass
+
     org = get_object_or_404(Organization, screening_link_token=token)
     request.session["public_teacher_org_id"] = org.id
     request.org = org
@@ -36,22 +44,45 @@ def teacher_portal_token(request, token: str):
 def _teacher_fk(request):
     return request.user if getattr(request.user, "is_authenticated", False) else None
 
-def _auto_send_for_screening(request, s: Screening):
+def _auto_send_for_screening(request, s):
+    from django.contrib import messages
+
+    # Preferred source: Student.primary_guardian (this is what your forms populate)
     guardian = getattr(s.student, "primary_guardian", None)
-    phone = getattr(guardian, "phone_e164", "") if guardian else ""
-    if not phone:
-        messages.warning(request, "No parent WhatsApp on file — message not prepared.")
+
+    # Fallback: if you ever use StudentGuardian links, try that too
+    if guardian is None:
+        link = s.student.guardian_links.select_related("guardian").first()
+        guardian = link.guardian if link else None
+
+    if not guardian or not getattr(guardian, "phone_e164", None):
+        messages.warning(request, "No parent phone number is available; cannot prepare WhatsApp message.")
         return None
+
     try:
-        log, _text = prepare_screening_status_click_to_chat(s)
-        messages.success(request, "Message prepared — open WhatsApp to send.")
+        # Screening-only orgs: multi-language parent WhatsApp message
+        try:
+            s.organization.screening_only_profile
+            is_screening_only = True
+        except Exception:
+            is_screening_only = False
+
+        if is_screening_only:
+            from screening_only.services import prepare_screening_only_redflag_click_to_chat
+            log, _text = prepare_screening_only_redflag_click_to_chat(request, s)
+        else:
+            log, _text = prepare_screening_status_click_to_chat(s)
+
+        if log:
+            messages.success(request, "WhatsApp message prepared. Please send to the parent.")
         return log
-    except RateLimitExceeded as e:
-        messages.warning(request, f"Message not prepared due to rate limits: {e}")
+
+    except Exception:
+        logger.exception("Auto-send whatsapp failed")
+        messages.error(request, "Could not prepare WhatsApp message.")
         return None
-    except Exception as e:
-        messages.error(request, f"Message preparation failed: {e}")
-        return None
+
+
 
 @require_teacher_or_public
 def teacher_portal(request):
@@ -222,15 +253,14 @@ def screening_result(request, screening_id: int):
     })
 
 @require_teacher_or_public
-def send_parent_whatsapp(request, screening_id: int):
-    s = get_object_or_404(Screening, pk=screening_id, organization=request.org)
-    if not s.student.primary_guardian or not s.student.primary_guardian.phone_e164:
-        messages.error(request, "Parent WhatsApp number missing.")
-        return redirect("screening_result", screening_id=s.id)
+def send_parent_whatsapp(request, screening_id):
+    s = get_object_or_404(Screening, id=screening_id, organization=request.org)
+    log = _auto_send_for_screening(request, s)
+    if log:
+        preview = reverse("whatsapp_preview", args=[log.id])
+        return redirect(preview)
+    return redirect(reverse("screening_result", args=[s.id]))
 
-    log, _text = prepare_screening_status_click_to_chat(s)
-    preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={reverse('screening_result', args=[s.id])}"
-    return redirect(preview)
 
 @require_teacher_or_public
 def teacher_add_student(request, token=None):

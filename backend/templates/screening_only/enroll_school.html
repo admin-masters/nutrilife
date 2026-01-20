@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Nutrilift – School Enrollment</title>
+  <style>
+    body{font-family:system-ui;max-width:860px;margin:0 auto;padding:1rem;background:#fafafa}
+    .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px}
+    label{display:block;margin-top:10px;font-weight:600}
+    input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin-top:6px}
+    button{margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>School Registration – Nutrilift Screening Program</h2>
+    <p class="muted">Register your school to start teacher-led nutrition screening.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <label>School Name</label>{{ form.school_name }}
+
+      <label>District (optional)</label>{{ form.district }}
+      <label>Address (optional)</label>{{ form.address }}
+
+      <label>City (optional)</label>{{ form.city }}
+      <label>State (optional)</label>{{ form.state }}
+      <label>Country</label>{{ form.country }}
+
+      <hr style="margin:14px 0;border:none;border-top:1px solid #eee">
+
+      <label>Principal Name (optional)</label>{{ form.principal_name }}
+      <label>Principal Email</label>{{ form.principal_email }}
+
+      <label>Program Operator Name (optional)</label>{{ form.operator_name }}
+      <label>Program Operator Email (optional)</label>{{ form.operator_email }}
+
+      <label>Local Language Code (optional)</label>
+      {{ form.local_language_code }}
+      <p class="muted" style="margin-top:6px;">Example: mr, te, ta. If left blank, we fallback to default local.</p>
+
+      <button type="submit">Submit Registration</button>
+    </form>
+  </div>
+</body>
+</html>
