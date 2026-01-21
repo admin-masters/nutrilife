@@ -38,13 +38,13 @@ class TeacherAccessForm(forms.Form):
     email = forms.EmailField()
     accept_terms = forms.BooleanField(required=True)
 
-    def clean_email(self):
-        email = self.cleaned_data.get("email")
-        if email:
-            email = email.strip().lower()
-            # Check if a user with this email already exists
-            if User.objects.filter(email=email).exists():
-                raise forms.ValidationError(
-                    "An account with this email already exists. Please use a different email address."
-                )
-        return email
+    # def clean_email(self):
+    #     email = self.cleaned_data.get("email")
+    #     if email:
+    #         email = email.strip().lower()
+    #         # Check if a user with this email already exists
+    #         if User.objects.filter(email=email).exists():
+    #             raise forms.ValidationError(
+    #                 "An account with this email already exists. Please use a different email address."
+    #             )
+    #     return email
