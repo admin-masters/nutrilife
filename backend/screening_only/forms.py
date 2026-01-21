@@ -1,5 +1,5 @@
 from django import forms
-
+from accounts.models import User
 
 class SchoolEnrollmentForm(forms.Form):
     school_name = forms.CharField(max_length=255)
@@ -37,3 +37,14 @@ class TeacherAccessForm(forms.Form):
     full_name = forms.CharField(max_length=255)
     email = forms.EmailField()
     accept_terms = forms.BooleanField(required=True)
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if email:
+            email = email.strip().lower()
+            # Check if a user with this email already exists
+            if User.objects.filter(email=email).exists():
+                raise forms.ValidationError(
+                    "An account with this email already exists. Please use a different email address."
+                )
+        return email

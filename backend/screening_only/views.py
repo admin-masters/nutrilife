@@ -257,6 +257,57 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
 
     email = (token_info.get("email") or "").strip().lower()
 
+    # Add this BEFORE the existing "if role == 'admin':" block
+    if role == "existing_admin":
+        # Find organization by matching email to principal_email or operator_email
+        from .models import ScreeningSchoolProfile
+    
+        email = (token_info.get("email") or "").strip().lower()
+    
+        # Find the organization where this email is authorized
+        profile = ScreeningSchoolProfile.objects.filter(
+            Q(principal_email__iexact=email) | Q(operator_email__iexact=email)
+        ).select_related("organization").first()
+    
+        if not profile:
+            messages.error(
+                request, 
+                f"No school found for email {email}. Please register your school first."
+            )
+            return redirect("screening_only:enroll_school")
+    
+        org = profile.organization
+    
+        # Get or create user
+        user, created = User.objects.get_or_create(email=email, defaults={"is_active": True})
+        if created:
+            user.set_unusable_password()
+            user.save()
+    
+        # Check if membership already exists - don't create duplicate
+        existing_membership = OrgMembership.objects.filter(
+            user=user, 
+            organization=org, 
+            role=Role.ORG_ADMIN
+        ).first()
+    
+        if existing_membership:
+            # Membership exists, just activate if inactive
+            if not existing_membership.is_active:
+                existing_membership.is_active = True
+                existing_membership.save(update_fields=["is_active"])
+        else:
+            # Create membership only if it doesn't exist
+            _ensure_membership(user, org, Role.ORG_ADMIN)
+    
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        request.session["current_org_id"] = org.id
+    
+        # Clear OAuth session
+        for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id"]:
+            request.session.pop(k, None)
+    
+        return redirect("screening_only:admin_onboarding")
     # Admin authorization: only registered principal/operator emails may login:contentReference[oaicite:14]{index=14}.
     if role == "admin":
         profile: Optional[ScreeningSchoolProfile] = getattr(org, "screening_only_profile", None)
@@ -648,3 +699,14 @@ def inditech_school_dashboard(request: HttpRequest, org_id: int) -> HttpResponse
             "rows": rows,
         },
     )
+
+def existing_admin_login(request: HttpRequest) -> HttpResponse:
+    """
+    Allows existing school admins to sign in from the enrollment page.
+    After OAuth, we'll find their organization by matching their email.
+    """
+    # Store pending OAuth context in session (no org_id yet - we'll find it after OAuth)
+    request.session["sp_oauth_role"] = "existing_admin"
+    request.session.modified = True
+    
+    return redirect("screening_only:google_oauth_start")
