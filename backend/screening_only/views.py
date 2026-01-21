@@ -240,12 +240,16 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         return redirect("screening_only:enroll_school")
 
     role = request.session.get("sp_oauth_role")
-    org_id = request.session.get("sp_oauth_org_id")
-    if not role or not org_id:
-        messages.error(request, "Login session expired. Please start again.")
-        return redirect("screening_only:enroll_school")
-
-    org = get_object_or_404(Organization, id=org_id)
+    
+    # For existing_admin, we don't have org_id yet - we'll find it after OAuth
+    # For other roles (admin, teacher), we need org_id
+    if role != "existing_admin":
+        org_id = request.session.get("sp_oauth_org_id")
+        if not role or not org_id:
+            messages.error(request, "Login session expired. Please start again.")
+            return redirect("screening_only:enroll_school")
+        org = get_object_or_404(Organization, id=org_id)
+    
     redirect_uri = request.build_absolute_uri(reverse("screening_only:google_oauth_callback"))
 
     try:
@@ -257,33 +261,31 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
 
     email = (token_info.get("email") or "").strip().lower()
 
-    # Add this BEFORE the existing "if role == 'admin':" block
+    # Handle existing admin login FIRST (before other role checks)
     if role == "existing_admin":
         # Find organization by matching email to principal_email or operator_email
         from .models import ScreeningSchoolProfile
-    
-        email = (token_info.get("email") or "").strip().lower()
-    
+        
         # Find the organization where this email is authorized
         profile = ScreeningSchoolProfile.objects.filter(
             Q(principal_email__iexact=email) | Q(operator_email__iexact=email)
         ).select_related("organization").first()
-    
+        
         if not profile:
             messages.error(
                 request, 
                 f"No school found for email {email}. Please register your school first."
             )
             return redirect("screening_only:enroll_school")
-    
+        
         org = profile.organization
-    
+        
         # Get or create user
         user, created = User.objects.get_or_create(email=email, defaults={"is_active": True})
         if created:
             user.set_unusable_password()
             user.save()
-    
+        
         # Check if membership already exists - don't create duplicate
         existing_membership = OrgMembership.objects.filter(
             user=user, 
@@ -299,15 +301,16 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         else:
             # Create membership only if it doesn't exist
             _ensure_membership(user, org, Role.ORG_ADMIN)
-    
+        
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         request.session["current_org_id"] = org.id
-    
+        
         # Clear OAuth session
         for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id"]:
             request.session.pop(k, None)
-    
-        return redirect("screening_only:admin_onboarding")
+        
+        # Redirect directly to admin link dashboard (not onboarding)
+        return redirect("screening_only:admin_link_dashboard")
     # Admin authorization: only registered principal/operator emails may login:contentReference[oaicite:14]{index=14}.
     if role == "admin":
         profile: Optional[ScreeningSchoolProfile] = getattr(org, "screening_only_profile", None)
