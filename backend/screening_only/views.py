@@ -373,6 +373,41 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
             user.last_name = ln
         user.save()
 
+        existing_memberships = OrgMembership.objects.filter(
+            user=user,
+            is_active=True
+        ).select_related("organization")
+
+        # Check if user has NON-TEACHER roles (and no TEACHER role)
+        non_teacher_memberships = existing_memberships.exclude(role=Role.TEACHER)
+        teacher_memberships = existing_memberships.filter(role=Role.TEACHER)
+
+        if non_teacher_memberships.exists() and not teacher_memberships.exists():
+            other_orgs = [mem.organization.name for mem in non_teacher_memberships]
+            other_roles = [mem.role for mem in non_teacher_memberships]
+            return render(
+                request,
+                "screening_only/teacher_access_denied.html",  # You may want to create a new template for this
+                {
+                    "org": org,
+                    "expected_email": expected,
+                    "attempted_email": email,
+                    "error_message": f"This email is already registered with other organization(s) ({', '.join(other_orgs)}) with role(s): {', '.join(set(other_roles))}. "
+                                     f"Teachers cannot use an email that is registered with a different role. Please use a different email address.",
+                    "retry_url": reverse("screening_only:teacher_auth_required"),
+                    "change_email_url": reverse("screening_only:teacher_access_portal", args=[org.screening_link_token]),
+                },
+            )
+        other_org_memberships = existing_memberships.exclude(organization=org).select_related("organization")
+        
+        if other_org_memberships.exists():
+            other_orgs = [mem.organization.name for mem in other_org_memberships]
+            messages.warning(
+                request,
+                f"This email is already registered with other organization(s): {', '.join(other_orgs)}. "
+                f"You are now also registered as a teacher for {org.name}."
+            ) 
+        # Ensure membership for this organization as teacher
         _ensure_membership(user, org, Role.TEACHER)
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         request.session["current_org_id"] = org.id
@@ -392,7 +427,8 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id", "sp_teacher_email", "sp_teacher_full_name", "sp_teacher_terms_ok"]:
             request.session.pop(k, None)
 
-        return redirect("screening_only:teacher_dashboard")
+        return redirect("screening_only:teacher_dashboard")       
+        
 
     messages.error(request, "Unknown login flow.")
     return redirect("screening_only:enroll_school")
