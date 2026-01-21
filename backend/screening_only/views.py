@@ -475,6 +475,7 @@ def admin_onboarding(request: HttpRequest) -> HttpResponse:
 
     guide_url = getattr(settings, "SCREENING_GUIDE_URL", "")
     training_url = getattr(settings, "SCREENING_TRAINING_VIDEO_URL", "")
+    terms_url = getattr(settings, "SCREENING_TERMS_URL", "") or "#"
 
     return render(
         request,
@@ -484,6 +485,7 @@ def admin_onboarding(request: HttpRequest) -> HttpResponse:
             "accepted": accepted,
             "guide_url": guide_url,
             "training_url": training_url,
+            "terms_url": terms_url,
         },
     )
 

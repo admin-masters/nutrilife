@@ -18,16 +18,16 @@
     <p class="muted">Complete these steps once before starting the screening program.</p>
 
     <ul>
-      {% if guide_url %}<li><a class="link" href="{{ guide_url }}" target="_blank">Download Screening Guide (PDF)</a></li>{% endif %}
-      {% if training_url %}<li><a class="link" href="{{ training_url }}" target="_blank">Watch Training Video</a></li>{% endif %}
-      <li>Accept the Screening Program Terms & Conditions</li>
+      <li><a class="link" href="{{ guide_url }}" target="_blank">Download Screening Guide (PDF)</a></li>
+      <li><a class="link" href="{{ training_url }}" target="_blank">Watch Training Video</a></li>
+      <li><a class="link" href="{{ terms_url }}" target="_blank">Terms and Conditions</a></li>
     </ul>
 
     <form method="post">
       {% csrf_token %}
       <label style="display:block;margin-top:12px;">
         <input type="checkbox" name="accept_terms" {% if accepted %}checked{% endif %}/>
-        I accept the terms and conditions
+        I accept the <a class="link" href="{{ terms_url }}" target="_blank">terms and conditions</a>
       </label>
       <button type="submit">Continue</button>
     </form>
