@@ -3,23 +3,22 @@ from accounts.models import User
 
 class SchoolEnrollmentForm(forms.Form):
     school_name = forms.CharField(max_length=255)
-    district = forms.CharField(max_length=128, required=False)
-    address = forms.CharField(max_length=255, required=False)
+    #district = forms.CharField(max_length=128, required=False)
+    address = forms.CharField(max_length=255, required=True)
 
-    city = forms.CharField(max_length=100, required=False)
-    state = forms.CharField(max_length=100, required=False)
-    country = forms.CharField(max_length=64, required=False, initial="India")
+    city = forms.CharField(max_length=100, required=True)
+    state = forms.CharField(max_length=100, required=True)
+    country = forms.CharField(max_length=64, required=True, initial="India")
 
-    principal_name = forms.CharField(max_length=255, required=False)
+    principal_name = forms.CharField(max_length=255, required=True)
     principal_email = forms.EmailField()
 
-    operator_name = forms.CharField(max_length=255, required=False)
-    operator_email = forms.EmailField(required=False)
+    operator_name = forms.CharField(max_length=255, required=True)
+    operator_email = forms.EmailField(required=True)
 
-    local_language_code = forms.CharField(
-        max_length=12,
-        required=False,
-        help_text="Optional: ISO language code for local language (e.g., mr, te).",
+    local_language_code = forms.ChoiceField(
+        choices=[('hi', 'Hindi'), ('mr', 'Marathi')],
+        required=True,
     )
 
     def clean(self):
