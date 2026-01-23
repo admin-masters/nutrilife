@@ -77,6 +77,25 @@
     </div>
 
     <div class="card">
+      <h3 style="margin: 0 0 10px 0;">Student details</h3>
+      <div class="grid">
+        <div class="kv"><strong>Name:</strong> {{ s.student.full_name }}</div>
+        <div class="kv">
+          <strong>Class:</strong>
+          {% if s.student.classroom %}
+            {{ s.student.classroom.grade }} {{ s.student.classroom.division }}
+          {% else %}
+            -
+          {% endif %}
+        </div>
+        <div class="kv"><strong>Student ID:</strong> {{ s.student.student_code|default:"-" }}</div>
+        <div class="kv"><strong>Gender:</strong> {{ s.gender|default:s.student.gender|default:"-" }}</div>
+        <div class="kv"><strong>Age (years):</strong> {{ s.age_years|default:"-" }}</div>
+        <div class="kv"><strong>Age (months):</strong> {{ s.age_months|default:"-" }}</div>
+      </div>
+    </div>
+
+    <div class="card">
       <h3 style="margin: 0 0 10px 0;">Key measurements</h3>
       <div class="grid">
         <div class="kv"><strong>Age (years):</strong> {{ s.age_years|default:"-" }}</div>
@@ -92,7 +111,9 @@
     <div class="card">
       <h3 style="margin: 0 0 10px 0;">Triggers / flags</h3>
 
-      {% if s.red_flags and s.red_flags|length > 0 %}
+      {% if is_parent_view and flags_text %}
+        <p>{{ flags_text }}</p>
+      {% elif s.red_flags and s.red_flags|length > 0 %}
         <ul class="flags">
           {% for f in s.red_flags %}
             <li>{{ f }}</li>
@@ -103,38 +124,52 @@
       {% endif %}
     </div>
 
-    <div class="card">
-      <h3 style="margin: 0 0 10px 0;">Parent WhatsApp</h3>
+    {% if not is_parent_view %}
+      <div class="card">
+        <h3 style="margin: 0 0 10px 0;">Parent WhatsApp</h3>
 
-      {% if s.student.primary_guardian and s.student.primary_guardian.phone_e164 %}
-        <p class="muted">Parent number: {{ s.student.primary_guardian.phone_e164 }}</p>
+        {% if s.student.primary_guardian and s.student.primary_guardian.phone_e164 %}
+          <p class="muted">Parent number: {{ s.student.primary_guardian.phone_e164 }}</p>
 
-        <div class="actions">
-          <a class="button primary" href="{% url 'send_parent_whatsapp' s.id %}">Send WhatsApp to Parent</a>
+          <div class="actions">
+            <a class="button primary" href="{% url 'send_parent_whatsapp' s.id %}">Send WhatsApp to Parent</a>
+
+            {% if last_message %}
+              <a class="button" href="{% url 'whatsapp_preview' last_message.id %}?next={% url 'screening_result' s.id %}">
+                Open last message preview
+              </a>
+            {% endif %}
+
+            <a class="button" href="{% url 'teacher_portal' %}">Back to Teacher Portal</a>
+          </div>
 
           {% if last_message %}
-            <a class="button" href="{% url 'whatsapp_preview' last_message.id %}?next={% url 'screening_result' s.id %}">
-              Open last message preview
-            </a>
+            <p class="muted" style="margin-top: 10px;">
+              Last message: <strong>{{ last_message.template_code }}</strong> → {{ last_message.get_status_display }}
+              {% if last_message.sent_at %}(sent at {{ last_message.sent_at }}){% endif %}
+            </p>
           {% endif %}
 
-          <a class="button" href="{% url 'teacher_portal' %}">Back to Teacher Portal</a>
-        </div>
-
-        {% if last_message %}
-          <p class="muted" style="margin-top: 10px;">
-            Last message: <strong>{{ last_message.template_code }}</strong> → {{ last_message.get_status_display }}
-            {% if last_message.sent_at %}(sent at {{ last_message.sent_at }}){% endif %}
-          </p>
+        {% else %}
+          <p><em>No parent WhatsApp number on file. Please go back and add it.</em></p>
+          <div class="actions">
+            <a class="button" href="{% url 'teacher_portal' %}">Back to Teacher Portal</a>
+          </div>
         {% endif %}
+      </div>
+    {% endif %}
 
-      {% else %}
-        <p><em>No parent WhatsApp number on file. Please go back and add it.</em></p>
+    {% if video_url %}
+      <div class="card">
+        <h3 style="margin: 0 0 10px 0;">Next steps for parents</h3>
+        <p class="muted">
+          You can go back to the education video to better understand your child's nutrition and the Nutrilift program.
+        </p>
         <div class="actions">
-          <a class="button" href="{% url 'teacher_portal' %}">Back to Teacher Portal</a>
+          <a class="button primary" href="{{ video_url }}">Back to education video</a>
         </div>
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
   </div>
 </body>
 </html>

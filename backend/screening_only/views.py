@@ -657,7 +657,10 @@ def parent_result(request: HttpRequest, token: str) -> HttpResponse:
     Public parent screening result view (linked from WhatsApp and from video page).
     """
     screening_id = parse_parent_token(token)
-    s = get_object_or_404(Screening.objects.select_related("student", "student__classroom", "organization"), id=screening_id)
+    s = get_object_or_404(
+        Screening.objects.select_related("student", "student__classroom", "organization"),
+        id=screening_id,
+    )
 
     lang = (request.GET.get("lang") or "en").strip().lower()
     try:
@@ -675,16 +678,19 @@ def parent_result(request: HttpRequest, token: str) -> HttpResponse:
         or ""
     )
 
+    # Reuse the common screening_result template for parents as well.
+    # We pass is_parent_view so the template can hide teacher-only actions.
     return render(
         request,
-        "screening_only/parent_result.html",
+        "screening/screening_result.html",
         {
-            "screening": s,
+            "s": s,
             "token": token,
             "lang": lang,
             "local_code": local_code,
             "flags_text": flags_text,
             "video_url": reverse("screening_only:parent_video", args=[token]),
+            "is_parent_view": True,
         },
     )
 
