@@ -24,4 +24,5 @@ def require_screening_only_admin(view_func):
 
 
 def require_screening_only_teacher(view_func):
-    return require_roles(Role.TEACHER)(require_screening_only_org(view_func))
+    # Allow both Teacher and School Admin into the screening-only “teacher” views
+    return require_roles(Role.TEACHER, Role.ORG_ADMIN)(require_screening_only_org(view_func))

@@ -20,7 +20,7 @@ def require_teacher_or_public(view_func):
         # Normal teacher access (authenticated)
         if request.user.is_authenticated:
             mem = getattr(request, "membership", None)
-            if mem and mem.role == Role.TEACHER:
+            if mem and mem.role in (Role.TEACHER, Role.ORG_ADMIN):
                 return view_func(request, *args, **kwargs)
 
         # Legacy public teacher-session access (DISABLED for Screening-only orgs)

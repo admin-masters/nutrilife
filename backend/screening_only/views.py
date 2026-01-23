@@ -378,8 +378,9 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
             is_active=True
         ).select_related("organization")
 
+        allowed_for_teacher_flow = [Role.TEACHER, Role.ORG_ADMIN]
         # Check if user has NON-TEACHER roles (and no TEACHER role)
-        non_teacher_memberships = existing_memberships.exclude(role=Role.TEACHER)
+        non_teacher_memberships = existing_memberships.exclude(role__in=allowed_for_teacher_flow)
         teacher_memberships = existing_memberships.filter(role=Role.TEACHER)
 
         if non_teacher_memberships.exists() and not teacher_memberships.exists():
