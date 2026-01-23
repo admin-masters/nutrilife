@@ -399,8 +399,9 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
                     "change_email_url": reverse("screening_only:teacher_access_portal", args=[org.screening_link_token]),
                 },
             )
+        # other_org_memberships = existing_memberships.exclude(organization=org).select_related("organization")
+        current_org_memberships = existing_memberships.filter(organization=org)
         other_org_memberships = existing_memberships.exclude(organization=org).select_related("organization")
-        
         if other_org_memberships.exists():
             other_orgs = [mem.organization.name for mem in other_org_memberships]
             messages.warning(
@@ -409,7 +410,8 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
                 f"You are now also registered as a teacher for {org.name}."
             ) 
         # Ensure membership for this organization as teacher
-        _ensure_membership(user, org, Role.TEACHER)
+        if not current_org_memberships.exists():
+            _ensure_membership(user, org, Role.TEACHER)
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         request.session["current_org_id"] = org.id
 
