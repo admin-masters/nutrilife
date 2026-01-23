@@ -220,12 +220,12 @@ def screening_create(request, student_id: int):
 
             log = _auto_send_for_screening(request, s)
             audit_log(_teacher_fk(request), org, "SCREENING_CREATED", target=s, payload={"risk": s.risk_level})
-
+            dashboard_url = reverse("screening_only:teacher_dashboard")
             if log:
-                preview = reverse("whatsapp_preview", args=[log.id])
-                preview += f"?next={reverse('screening_result', args=[s.id])}"
+                preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={dashboard_url}"
+                
                 return redirect(preview)
-            return redirect(reverse("screening_result", args=[s.id]))
+            return redirect(dashboard_url)
 
         return render(request, "screening/screening_form.html", {"student": student, "form": form})
 
@@ -256,10 +256,12 @@ def screening_result(request, screening_id: int):
 def send_parent_whatsapp(request, screening_id):
     s = get_object_or_404(Screening, id=screening_id, organization=request.org)
     log = _auto_send_for_screening(request, s)
+    dashboard_url = reverse("screening_only:teacher_dashboard")
+
     if log:
-        preview = reverse("whatsapp_preview", args=[log.id])
+        preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={dashboard_url}"
         return redirect(preview)
-    return redirect(reverse("screening_result", args=[s.id]))
+    return redirect(dashboard_url)
 
 
 @require_teacher_or_public
@@ -360,11 +362,11 @@ def teacher_add_student(request, token=None):
 
                 log = _auto_send_for_screening(request, s)
                 messages.success(request, f"Student “{student.full_name}” created and screening completed.")
-
+                dashboard_url = reverse("screening_only:teacher_dashboard")
                 if log:
-                    preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={reverse('screening_result', args=[s.id])}"
+                    preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={dashboard_url}"
                     return redirect(preview)
-                return redirect("screening_result", screening_id=s.id)
+                return redirect(dashboard_url)
 
             except (IntegrityError, ValidationError, ValueError) as e:
                 messages.error(request, f"Could not complete: {e}")

@@ -5,15 +5,6 @@
     <title>Open WhatsApp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <script>
-      // Try to open WhatsApp automatically; user still sends manually inside WhatsApp
-      window.addEventListener("load", function () {
-        var href = "{{ wa_url|escapejs }}";
-        // Small delay improves success on some browsers
-        setTimeout(function () { window.location.href = href; }, 50);
-      });
-    </script>
-
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; background: #fafafa; color: #111; }
       .container { max-width: 820px; margin: 0 auto; }
@@ -41,7 +32,15 @@
         <p class="muted">If WhatsApp didn’t open automatically, tap the button below.</p>
 
         <div class="actions">
-          <a class="button primary" href="{{ wa_url }}">Open WhatsApp</a>
+          <a
+            id="open-wa-btn"
+            class="button primary"
+            href="{{ wa_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open WhatsApp
+          </a>
           <a class="button" href="{{ next_url }}">Continue</a>
         </div>
       </div>
@@ -51,5 +50,26 @@
         <pre>{{ message_text }}</pre>
       </div>
     </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var btn = document.getElementById("open-wa-btn");
+        if (!btn) return;
+    
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+    
+          var waUrl = "{{ wa_url|escapejs }}";
+          var nextUrl = "{{ next_url|escapejs }}";
+    
+          // Open WhatsApp in a new tab
+          window.open(waUrl, "_blank");
+    
+          // Redirect current tab back (we will set next_url to the teacher dashboard)
+          if (nextUrl) {
+            window.location.href = nextUrl;
+          }
+        });
+      });
+    </script>
   </body>
 </html>
