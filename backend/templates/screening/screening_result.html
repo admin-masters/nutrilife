@@ -47,13 +47,13 @@
 
 <body>
   <div class="container">
-    {% if messages %}
+    {% comment %} {% if messages %}
       <ul class="messages">
         {% for m in messages %}
           <li class="{{ m.tags }}">{{ m }}</li>
         {% endfor %}
       </ul>
-    {% endif %}
+    {% endif %} {% endcomment %}
 
     <div class="card">
       <h2>Screening Result – {{ s.student.full_name }}</h2>
