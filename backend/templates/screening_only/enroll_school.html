@@ -26,7 +26,6 @@
     </div>
   <div class="card">
     <h2>School Registration – Nutrilift Screening Program</h2>
-    <p class="muted">Register your school to start teacher-led nutrition screening.</p>
 
     <form method="post">
       {% csrf_token %}
@@ -51,7 +50,6 @@
 
       <label>Local Language Code </label>
       {{ form.local_language_code }}
-      <p class="muted" style="margin-top:6px;">Example: mr, te, ta. If left blank, we fallback to default local.</p>
 
       <button type="submit">Submit Registration</button>
     </form>

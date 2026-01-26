@@ -183,6 +183,7 @@ def teacher_access_portal(request: HttpRequest, token: str) -> HttpResponse:
         {
             "org": org,
             "form": form,
+            "terms_url": getattr(settings, "SCREENING_TERMS_URL", "") or "#",
         },
     )
 

@@ -17,7 +17,6 @@
 <body>
   <div class="card">
     <h2>{{ org.name }} – Screening Dashboard</h2>
-    <p class="muted">Shows class/division screening performance for selected academic year (screened once or twice).</p>
 
     <form method="get">
       <label>Academic year:</label>
@@ -27,8 +26,6 @@
         {% endfor %}
       </select>
     </form>
-
-    <p class="muted">Period: {{ start_dt }} → {{ end_dt }}</p>
 
     <p><a class="btn" href="{{ link_dashboard_url }}">Back to Link Sharing</a></p>
   </div>

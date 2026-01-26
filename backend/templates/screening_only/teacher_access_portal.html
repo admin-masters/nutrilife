@@ -11,6 +11,7 @@
     input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin-top:6px}
     button{margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;width:100%}
     .muted{color:#666}
+    a{color:#111;text-decoration:underline}
   </style>
 </head>
 <body>
@@ -24,7 +25,7 @@
       <label>Email Address</label>{{ form.email }}
 
       <label style="display:block;margin-top:12px;">
-        {{ form.accept_terms }} I accept the terms and conditions
+        {{ form.accept_terms }} I accept the <a href="{{ terms_url }}" target="_blank" style="color:#111;text-decoration:underline;">terms and conditions</a>
       </label>
 
       <button type="submit">Continue to Sign In</button>
