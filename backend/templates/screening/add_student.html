@@ -222,9 +222,9 @@
                 {% if screening_form.cycle_length_days.errors %}<div class="errors">{{ screening_form.cycle_length_days.errors }}</div>{% endif %}
               </div>
               <div class="field">
-                <label for="{{ form.bleeding_days.id_for_label }}">{{ form.bleeding_days.label }}</label>
-                {{ form.bleeding_days }}
-                {% if form.bleeding_days.errors %}<div class="errors">{{ form.bleeding_days.errors }}</div>{% endif %}
+                <label for="{{ screening_form.bleeding_days.id_for_label }}">{{ screening_form.bleeding_days.label }}</label>
+                {{ screening_form.bleeding_days }}
+                {% if screening_form.bleeding_days.errors %}<div class="errors">{{ screening_form.bleeding_days.errors }}</div>{% endif %}
               </div>
             </div>
         
