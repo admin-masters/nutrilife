@@ -299,72 +299,257 @@
       </div>
     </form>
   </div>
+  
   <script>
     (function () {
-      const sexField = document.querySelector('[name="sex"]');
-      const girlsSection = document.getElementById('girls-only-section');
-      if (!sexField || !girlsSection) return;
-  
-      function setVisibility() {
-        const v = String(sexField.value || '').toUpperCase();
-        const show = (v === 'F' || v === 'FEMALE');
-        girlsSection.style.display = show ? '' : 'none';
-  
-        // If hidden, clear any previously-entered values.
-        if (!show) {
-          girlsSection.querySelectorAll('input, select, textarea').forEach((el) => {
-            if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
-            else el.value = '';
-          });
+      'use strict';
+    
+      function qs(sel, root) { return (root || document).querySelector(sel); }
+      function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+    
+      // ---------- Age calculation helpers ----------
+      function parseISODateToLocal(iso) {
+        // Expect yyyy-mm-dd (from <input type="date">)
+        if (!iso) return null;
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+        if (!m) return null;
+        var y = Number(m[1]);
+        var mo = Number(m[2]) - 1;
+        var d = Number(m[3]);
+        var dt = new Date(y, mo, d);
+        if (isNaN(dt.getTime())) return null;
+        // Validate round-trip (guards invalid dates like 2024-02-31)
+        if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) return null;
+        return dt;
+      }
+    
+      function computeAgeMonths(dob, today) {
+        if (!dob || !today) return null;
+        var months = (today.getFullYear() - dob.getFullYear()) * 12 + (today.getMonth() - dob.getMonth());
+        if (today.getDate() < dob.getDate()) months -= 1; // not completed the month yet
+        if (months < 0) return null;
+        return months;
+      }
+    
+      function formatAge(months) {
+        var y = Math.floor(months / 12);
+        var m = months % 12;
+        var yLabel = (y === 1) ? 'year' : 'years';
+        var mLabel = (m === 1) ? 'month' : 'months';
+        return y + ' ' + yLabel + ' ' + m + ' ' + mLabel;
+      }
+    
+      // ---------- Generic helpers ----------
+      function clearInputs(root) {
+        if (!root) return;
+        qsa('input, select, textarea', root).forEach(function (el) {
+          if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
+          } else {
+            el.value = '';
+          }
+        });
+      }
+    
+      function getCheckedValue(name) {
+        var el = qs('input[name="' + name + '"]:checked');
+        return el ? el.value : '';
+      }
+    
+      function setRadioChecked(name, value) {
+        var el = qs('input[name="' + name + '"][value="' + value + '"]');
+        if (el) el.checked = true;
+      }
+    
+      function setSelectValueByName(name, value) {
+        var el = qs('select[name="' + name + '"]');
+        if (el) el.value = value;
+      }
+    
+      // ---------- DOM refs (shared by both templates) ----------
+      var dobEl = qs('[name="dob"]');
+      var ageDisplayEl = document.getElementById('age-display');
+    
+      var sexEl = qs('[name="sex"]');
+      var sexHintEl = document.getElementById('sex-disabled-hint');
+    
+      var muacWrapper = document.getElementById('muac-field');
+      var girlsSection = document.getElementById('girls-only-section');
+      var menarcheDetails = document.getElementById('girls-menarche-details');
+      var menarcheStartedEl = qs('[name="menarche_started"]');
+    
+      var dewormingMonthsWrapper = document.getElementById('deworming-months-field');
+    
+      var eggField = document.getElementById('diet-egg-field');
+      var meatField = document.getElementById('diet-meat-field');
+    
+      // ---------- Sync functions ----------
+      function syncAgeAndSexLock() {
+        var today = new Date();
+        var dob = dobEl ? parseISODateToLocal(dobEl.value) : null;
+        var ageMonths = dob ? computeAgeMonths(dob, today) : null;
+    
+        // Age display (below DOB)
+        if (ageDisplayEl) {
+          ageDisplayEl.textContent = (typeof ageMonths === 'number') ? formatAge(ageMonths) : '';
+        }
+    
+        // Enforce: DOB required before Sex
+        if (sexEl) {
+          var enableSex = (typeof ageMonths === 'number');
+          sexEl.disabled = !enableSex;
+    
+          if (!enableSex) {
+            sexEl.value = '';
+          }
+    
+          if (sexHintEl) {
+            sexHintEl.style.display = enableSex ? 'none' : '';
+          }
+        }
+    
+        return ageMonths;
+      }
+    
+      function syncMuacVisibility(ageMonths) {
+        if (!muacWrapper) return;
+    
+        // Only hide MUAC for age >= 5 years (>= 60 months)
+        var hide = (typeof ageMonths === 'number') && (ageMonths >= 60);
+    
+        muacWrapper.style.display = hide ? 'none' : '';
+    
+        if (hide) {
+          // Auto-select GREEN so no red/yellow flags occur
+          // Support either radio or select (in case rendering changes)
+          setRadioChecked('muac_tape_color', 'GREEN');
+          setSelectValueByName('muac_tape_color', 'GREEN');
         }
       }
-  
-      sexField.addEventListener('change', setVisibility);
-      setVisibility();
-    })();
-  </script>
-  <script>
-    (function () {
-      // Section D diet options constrained by diet type:
-      // - NON_VEG: show Egg + Fish/Chicken/Meat
-      // - LACTO_OVO: show Egg, hide Fish/Chicken/Meat
-      // - LACTO_VEG: hide Egg + Fish/Chicken/Meat
-      const dietTypeRadios = Array.from(document.querySelectorAll('input[name="diet_type"]'));
-      const eggField = document.getElementById('diet-egg-field');
-      const meatField = document.getElementById('diet-meat-field');
-  
-      if (!dietTypeRadios.length) return;
-  
+    
+      function syncGirlsVisibility(ageMonths) {
+        if (!girlsSection) return;
+    
+        var sex = sexEl ? String(sexEl.value || '').toUpperCase() : '';
+        var isGirl = (sex === 'F' || sex === 'FEMALE');
+        var is10Plus = (typeof ageMonths === 'number') && (ageMonths >= 120);
+    
+        var showGirls = isGirl && is10Plus;
+    
+        girlsSection.style.display = showGirls ? '' : 'none';
+    
+        if (!showGirls) {
+          clearInputs(girlsSection);
+          // also hide details wrapper if present
+          if (menarcheDetails) menarcheDetails.style.display = 'none';
+        }
+      }
+    
+      function syncMenarcheDetailsVisibility() {
+        if (!girlsSection || !menarcheDetails) return;
+    
+        // If girls section is hidden, keep details hidden and cleared.
+        if (girlsSection.style.display === 'none') {
+          menarcheDetails.style.display = 'none';
+          clearInputs(menarcheDetails);
+          return;
+        }
+    
+        var started = !!(menarcheStartedEl && menarcheStartedEl.checked);
+        menarcheDetails.style.display = started ? '' : 'none';
+    
+        if (!started) {
+          clearInputs(menarcheDetails);
+        }
+      }
+    
+      function syncDewormingMonthsVisibility() {
+        if (!dewormingMonthsWrapper) return;
+    
+        var v = getCheckedValue('deworming_taken'); // 'yes' | 'no' | 'dont_know'
+        var show = (String(v || '').toLowerCase() === 'yes');
+    
+        dewormingMonthsWrapper.style.display = show ? '' : 'none';
+    
+        if (!show) {
+          // clear follow-up field when hidden
+          clearInputs(dewormingMonthsWrapper);
+          // If wrapper contains only the months select, this is enough.
+          // If needed, also explicitly clear by name:
+          setSelectValueByName('deworming_date', '');
+        }
+      }
+    
       function forceNoAnswer(fieldWrapper, fieldName) {
         if (!fieldWrapper) return;
-        const no = fieldWrapper.querySelector(`input[name="${fieldName}"][value="no"]`);
+    
+        // New behavior: Yes/No may be a <select>
+        var sel = fieldWrapper.querySelector('select[name="' + fieldName + '"]');
+        if (sel) {
+          sel.value = 'no';
+          return;
+        }
+    
+        // Old behavior: Yes/No as radios
+        var no = fieldWrapper.querySelector('input[name="' + fieldName + '"][value="no"]');
         if (no) no.checked = true;
       }
-  
-      function setDietVisibility() {
-        const checked = document.querySelector('input[name="diet_type"]:checked');
-        const dietType = String(checked ? checked.value : '').toUpperCase();
-  
-        // Keep the default UI unchanged until diet type is chosen.
-        const knownTypes = new Set(['LACTO_VEG', 'LACTO_OVO', 'NON_VEG']);
-        const showEgg = !knownTypes.has(dietType) || dietType === 'LACTO_OVO' || dietType === 'NON_VEG';
-        const showMeat = !knownTypes.has(dietType) || dietType === 'NON_VEG';
-  
+    
+      function syncDietVisibility() {
+        var dietTypeRadios = qsa('input[name="diet_type"]');
+        if (!dietTypeRadios.length) return;
+    
+        var checked = qs('input[name="diet_type"]:checked');
+        var dietType = String(checked ? checked.value : '').toUpperCase();
+    
+        var knownTypes = { 'LACTO_VEG': true, 'LACTO_OVO': true, 'NON_VEG': true };
+    
+        // Keep default UI unchanged until diet type is chosen.
+        var showEgg = !knownTypes[dietType] || dietType === 'LACTO_OVO' || dietType === 'NON_VEG';
+        var showMeat = !knownTypes[dietType] || dietType === 'NON_VEG';
+    
         if (eggField) {
           eggField.style.display = showEgg ? '' : 'none';
           if (!showEgg) forceNoAnswer(eggField, 'egg');
         }
-  
+    
         if (meatField) {
           meatField.style.display = showMeat ? '' : 'none';
           if (!showMeat) forceNoAnswer(meatField, 'fish_chicken_meat');
         }
       }
-  
-      dietTypeRadios.forEach((el) => el.addEventListener('change', setDietVisibility));
-      setDietVisibility();
+    
+      function syncAll() {
+        var ageMonths = syncAgeAndSexLock();
+        syncMuacVisibility(ageMonths);
+        syncGirlsVisibility(ageMonths);
+        syncMenarcheDetailsVisibility();
+        syncDewormingMonthsVisibility();
+        syncDietVisibility();
+      }
+    
+      // ---------- Wire events ----------
+      if (dobEl) dobEl.addEventListener('change', syncAll);
+      if (sexEl) sexEl.addEventListener('change', syncAll);
+    
+      // Menarche checkbox toggles details
+      if (menarcheStartedEl) menarcheStartedEl.addEventListener('change', syncMenarcheDetailsVisibility);
+    
+      // Deworming radios toggle months
+      qsa('input[name="deworming_taken"]').forEach(function (el) {
+        el.addEventListener('change', syncDewormingMonthsVisibility);
+      });
+    
+      // Diet type radios toggle egg/meat fields
+      qsa('input[name="diet_type"]').forEach(function (el) {
+        el.addEventListener('change', syncDietVisibility);
+      });
+    
+      // Initial state
+      syncAll();
     })();
-  </script>
+    </script>
+    
   
 </body>
 </html>
