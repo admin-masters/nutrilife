@@ -92,6 +92,7 @@
             <label for="{{ form.dob.id_for_label }}">{{ form.dob.label }}</label>
             {{ form.dob }}
             {% if form.dob.errors %}<div class="errors">{{ form.dob.errors }}</div>{% endif %}
+            <div id="age-display" class="muted" style="margin-top: 4px;"></div>
           </div>
 
           <div class="field">
@@ -129,11 +130,12 @@
             {% if form.height_cm_r1.errors %}<div class="errors">{{ form.height_cm_r1.errors }}</div>{% endif %}
           </div>
 
-          <div class="field">
-            <label for="{{ form.muac_cm.id_for_label }}">{{ form.muac_cm.label }}</label>
-            {{ form.muac_cm }}
-            {% if form.muac_cm.errors %}<div class="errors">{{ form.muac_cm.errors }}</div>{% endif %}
+          <div class="field radio" id="muac-field">
+            <label for="{{ form.muac_tape_color.id_for_label }}">{{ form.muac_tape_color.label }}</label>
+            {{ form.muac_tape_color }}
+            {% if form.muac_tape_color.errors %}<div class="errors">{{ form.muac_tape_color.errors }}</div>{% endif %}
           </div>
+
         </div>
       </fieldset>
 
@@ -168,31 +170,38 @@
 
         <fieldset id="girls-only-section" style="margin-top: 12px;">
           <legend>Girls only (Age 10+)</legend>
-          <p class="section-hint">Fill only if applicable (girls who have started menstruation).</p>
+          <p class="section-hint">Visible only for girls age 10+. The following fields appear only if menarche has started.</p>
 
           <div class="checks">
-            <div class="check">{{ form.menarche_started }} <label for="{{ form.menarche_started.id_for_label }}">{{ form.menarche_started.label }}</label></div>
-            <div class="check">{{ form.bleeding_clots }} <label for="{{ form.bleeding_clots.id_for_label }}">{{ form.bleeding_clots.label }}</label></div>
+            <div class="check">{{ form.menarche_started }}
+              <label for="{{ form.menarche_started.id_for_label }}">{{ form.menarche_started.label }}</label>
+            </div>
           </div>
 
-          <div class="grid" style="margin-top: 8px;">
-            <div class="field">
-              <label for="{{ form.menarche_age_years.id_for_label }}">{{ form.menarche_age_years.label }}</label>
-              {{ form.menarche_age_years }}
-              {% if form.menarche_age_years.errors %}<div class="errors">{{ form.menarche_age_years.errors }}</div>{% endif %}
+          <div id="girls-menarche-details" style="margin-top: 8px;">
+            <div class="grid">
+              <div class="field">
+                <label for="{{ form.menarche_age_years.id_for_label }}">{{ form.menarche_age_years.label }}</label>
+                {{ form.menarche_age_years }}
+              </div>
+              <div class="field">
+                <label for="{{ form.pads_per_day.id_for_label }}">{{ form.pads_per_day.label }}</label>
+                {{ form.pads_per_day }}
+              </div>
+              <div class="field">
+                <label for="{{ form.cycle_length_days.id_for_label }}">{{ form.cycle_length_days.label }}</label>
+                {{ form.cycle_length_days }}
+              </div>
             </div>
-            <div class="field">
-              <label for="{{ form.pads_per_day.id_for_label }}">{{ form.pads_per_day.label }}</label>
-              {{ form.pads_per_day }}
-              {% if form.pads_per_day.errors %}<div class="errors">{{ form.pads_per_day.errors }}</div>{% endif %}
-            </div>
-            <div class="field">
-              <label for="{{ form.cycle_length_days.id_for_label }}">{{ form.cycle_length_days.label }}</label>
-              {{ form.cycle_length_days }}
-              {% if form.cycle_length_days.errors %}<div class="errors">{{ form.cycle_length_days.errors }}</div>{% endif %}
+
+            <div class="checks" style="margin-top: 8px;">
+              <div class="check">{{ form.bleeding_clots }}
+                <label for="{{ form.bleeding_clots.id_for_label }}">{{ form.bleeding_clots.label }}</label>
+              </div>
             </div>
           </div>
         </fieldset>
+
       </fieldset>
 
       <!-- SECTION D -->
@@ -247,7 +256,6 @@
           
           <div class="field radio"><label>{{ form.nuts_groundnuts.label }}</label>{{ form.nuts_groundnuts }}{% if form.nuts_groundnuts.errors %}<div class="errors">{{ form.nuts_groundnuts.errors }}</div>{% endif %}</div>
 
-          <div class="field radio"><label>{{ form.millet_whole_grains.label }}</label>{{ form.millet_whole_grains }}{% if form.millet_whole_grains.errors %}<div class="errors">{{ form.millet_whole_grains.errors }}</div>{% endif %}</div>
           <div class="field radio"><label>{{ form.ssb_or_packaged_snacks.label }}</label>{{ form.ssb_or_packaged_snacks }}{% if form.ssb_or_packaged_snacks.errors %}<div class="errors">{{ form.ssb_or_packaged_snacks.errors }}</div>{% endif %}</div>
         </div>
       </fieldset>
@@ -263,10 +271,12 @@
             {{ form.deworming_taken }}
             {% if form.deworming_taken.errors %}<div class="errors">{{ form.deworming_taken.errors }}</div>{% endif %}
           </div>
-          <div class="field">
-            <label for="{{ form.deworming_date.id_for_label }}">{{ form.deworming_date.label }}</label>
-            {{ form.deworming_date }}
-            {% if form.deworming_date.errors %}<div class="errors">{{ form.deworming_date.errors }}</div>{% endif %}
+          <div class="field" id="deworming-months-field">
+            <div class="field">
+              <label for="{{ form.deworming_date.id_for_label }}">{{ form.deworming_date.label }}</label>
+              {{ form.deworming_date }}
+              {% if form.deworming_date.errors %}<div class="errors">{{ form.deworming_date.errors }}</div>{% endif %}
+            </div>
           </div>
         </div>
       </fieldset>
@@ -274,7 +284,7 @@
       <!-- SECTION F -->
       <fieldset>
         <legend>Section F: Food Security</legend>
-        <p class="section-hint">If “Often true” or “Sometimes true”, status becomes RED per logic.</p>
+        <p class="section-hint">If “Never true” or “Sometimes true”, status becomes RED per logic.</p>
 
         <div class="field radio">
           <label for="{{ form.hunger_vital_sign.id_for_label }}">{{ form.hunger_vital_sign.label }}</label>

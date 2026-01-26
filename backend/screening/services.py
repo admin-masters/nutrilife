@@ -17,8 +17,7 @@ def _bmi(height_cm: Optional[float], weight_kg: Optional[float]) -> Optional[flo
     m = float(height_cm) / 100.0
     return float(weight_kg) / (m * m)
 
-def _muac_flag(muac_cm: Optional[float], age_months: Optional[int]) -> Optional[str]:
-    # MUAC thresholds apply only for age 6–59 months per sheet
+def _muac_numeric_flag(muac_cm: Optional[float], age_months: Optional[int]) -> Optional[str]:
     if muac_cm is None or age_months is None:
         return None
     if age_months < 6 or age_months > 59:
@@ -26,9 +25,22 @@ def _muac_flag(muac_cm: Optional[float], age_months: Optional[int]) -> Optional[
     x = float(muac_cm)
     if x < 11.5:
         return "RED"
-    if 11.5 <= x <= 12.5:
+    if x < 12.5:
         return "YELLOW"
-    return "GREEN"
+    return None
+
+def _muac_tape_flag(muac_tape_color: Optional[str], age_months: Optional[int]) -> Optional[str]:
+    if age_months is None:
+        return None
+    if age_months < 6 or age_months > 59:
+        return None
+    if not muac_tape_color:
+        return None
+    c = str(muac_tape_color).upper()
+    if c in {"RED", "YELLOW"}:
+        return c
+    return None
+
 
 def _baz_category(baz: float) -> Tuple[str, str]:
     # Sheet thresholds:
@@ -109,47 +121,55 @@ def compute_risk(
         flags.append("baz_unavailable")
 
     # --- MUAC (6–59 months only) ---
-    muac_level = _muac_flag(muac_cm, age_months)
+    muac_level = _muac_tape_flag(answers.get("muac_tape_color"), age_months)
+    if muac_level is None:
+        muac_level = _muac_numeric_flag(muac_cm, age_months)
+
     derived["muac_level"] = muac_level
-    if muac_level in {"RED", "YELLOW"}:
-        flags.append(f"muac_{muac_level.lower()}")
+
+    if muac_level == "RED":
+        flags.append("muac_red")
+    elif muac_level == "YELLOW":
+        flags.append("muac_yellow")
 
     # --- Section C: Quick Health Red Flags (any YES => RED) ---
     health_red = [k for k in _HEALTH_REDFLAG_KEYS if bool(answers.get(k))]
 
-    if (answers.get("appetite") or "").upper() == "POOR":
-        health_red.append("appetite_poor")
+    appetite = answers.get("appetite")
+    # Old records: GOOD/NORMAL/POOR. New records: boolean where True means "Yes".
+    if appetite is True or (isinstance(appetite, str) and appetite.upper() == "POOR"):
+        health_red.append("appetite_not_hungry")
 
     # Adolescent girls (age >=10 only): heavy bleeding + irregular cycles
-    if (sex or "").upper() == "F" and age_years is not None and float(age_years) >= 10.0:
+    if (sex or "").upper() == "F" and age_years is not None and float(age_years) >= 10.0 and bool(answers.get("menarche_started")):
         pads_per_day = answers.get("pads_per_day")
         bleeding_clots = bool(answers.get("bleeding_clots"))
 
-        pads = None
-        if pads_per_day is not None:
-            try:
-                pads = int(pads_per_day)
-            except Exception:
-                pads = None
-
-        if (pads is not None and pads >= 5) or bleeding_clots:
+        # pads/day > 4 => red flag
+        if pads_per_day is not None and int(pads_per_day) > 4:
             health_red.append("heavy_bleeding")
 
-        cycle_length_days = answers.get("cycle_length_days")
-        if cycle_length_days is not None:
+        if bleeding_clots:
+            health_red.append("heavy_bleeding")
+
+        cycle_raw = answers.get("cycle_length_days")
+        if isinstance(cycle_raw, str) and cycle_raw.upper() == "GT_45":
+            health_red.append("irregular_cycles_gt_45")
+        elif cycle_raw is not None:
+            # old numeric compatibility
             try:
-                days = int(cycle_length_days)
+                if int(cycle_raw) > 45:
+                    health_red.append("irregular_cycles_gt_45")
             except Exception:
-                days = None
-            if days is not None and days > 45:
-                health_red.append("irregular_cycles_gt_45")
+                pass
+
 
     derived["health_red_flags"] = health_red
 
     # --- Section F: Food Security ---
-    hunger = (answers.get("hunger_vital_sign") or "").upper()  # OFTEN_TRUE / SOMETIMES_TRUE / NEVER_TRUE
+    hunger = (answers.get("hunger_vital_sign") or "").upper()
     derived["hunger_vital_sign"] = hunger
-    food_security_red = hunger in {"OFTEN_TRUE", "SOMETIMES_TRUE"}
+    food_security_red = hunger in {"SOMETIMES_TRUE", "NEVER_TRUE"}
     if food_security_red:
         flags.append("food_insecurity")
 
@@ -178,11 +198,13 @@ def compute_risk(
     _flag_if_no("fish_chicken_meat", enabled=(diet_type == "NON_VEG"))
 
     _flag_if_no("nuts_groundnuts")
-    _flag_if_no("millet_whole_grains")
+    
 
     # Negative check: YES => needs attention (sheet marks “Red Flag” on YES)
+    ssb_red = False
     if answers.get("ssb_or_packaged_snacks") is True:
         diet_flags.append("ssb_or_packaged_snacks")
+        ssb_red = True
 
     # Program enabler: deworming “No” => flag
     if answers.get("deworming_taken") is False:
@@ -191,13 +213,25 @@ def compute_risk(
     derived["diet_flags"] = diet_flags
     flags.extend(diet_flags)
 
+    deworming_taken_raw = answers.get("deworming_taken")
+    if deworming_taken_raw is False:
+        diet_flags.append("deworming_not_recent")
+    elif isinstance(deworming_taken_raw, str):
+        v = deworming_taken_raw.lower()
+        if v == "no":
+            diet_flags.append("deworming_not_recent")
+        elif v in {"dont_know", "don't know", "dontknow", "unknown"}:
+            diet_flags.append("deworming_unknown")
+
     # --- Final status decision ---
-    if growth_level == "RED" or muac_level == "RED" or health_red or food_security_red:
+    if growth_level == "RED" or muac_level == "RED" or health_red or food_security_red or ssb_red or diet_flags:
         level = "RED"
-    elif growth_level == "YELLOW" or muac_level == "YELLOW" or diet_flags or hunger != "NEVER_TRUE":
+    elif growth_level == "YELLOW" or muac_level == "YELLOW":
         level = "YELLOW"
     else:
         level = "GREEN"
+
+    
 
     # Helpful debugging strings (kept in DB in Screening.red_flags)
     if derived.get("baz") is not None:

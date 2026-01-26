@@ -32,7 +32,21 @@ def _age_months(dob, as_of_date) -> int:
     return max(months, 0)
 
 _BOOL_CHOICES = (("yes", "Yes"), ("no", "No"))
+_BOOL_SELECT_CHOICES = (("", "Select"), *_BOOL_CHOICES)
 
+def YesNoSelectField(label: str, *, required: bool = True):
+    """Yes/No dropdown.
+
+    Important: includes a blank placeholder so the browser does not auto-select "Yes".
+    """
+    return forms.TypedChoiceField(
+        label=label,
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=lambda x: _coerce_bool(x),
+        required=required,
+        widget=forms.Select,
+    )
+    
 def _coerce_bool(v):
     if v in (True, "True", "true", "1", "yes", "YES", "on"):
         return True
@@ -55,15 +69,25 @@ class NewScreeningForm(forms.ModelForm):
     unique_student_id = forms.CharField(label="Unique Student ID", max_length=64, required=True)
     dob = forms.DateField(label="Date of Birth (DOB)", required=True,
                           widget=forms.DateInput(attrs={"type": "date"}))
-    sex = forms.ChoiceField(label="Sex", choices=(("M", "Male"), ("F", "Female")), required=True)
+    sex = forms.ChoiceField(
+        label="Sex",
+        choices=(("", "Select sex"), ("M", "Male"), ("F", "Female")),
+        required=True,
+    )
+
     parent_phone_e164 = forms.CharField(label="Parent WhatsApp No.", required=True)
 
         # SECTION B
     # NOTE: Only ONE reading each is required (as per field feedback).
     weight_kg_r1 = forms.DecimalField(label="Weight (kg)", max_digits=5, decimal_places=2)
     height_cm_r1 = forms.DecimalField(label="Height (cm)", max_digits=5, decimal_places=2)
-    muac_cm = forms.DecimalField(label="Mid-Upper Arm Circumference (MUAC) (cm)",
-                                 max_digits=5, decimal_places=2, required=False)
+    _MUAC_TAPE_CHOICES = (("RED", "Red"), ("YELLOW", "Yellow"), ("GREEN", "Green"))
+    muac_tape_color = forms.ChoiceField(
+        label="MUAC (tape color)",
+        choices=_MUAC_TAPE_CHOICES,
+        widget=forms.RadioSelect,
+        required=False,
+    )
 
 
     # SECTION C
@@ -78,19 +102,44 @@ class NewScreeningForm(forms.ModelForm):
     health_night_vision_difficulty = forms.BooleanField(label="Night vision difficulty (stumbling in dim light)", required=False)
     health_bone_or_joint_pain = forms.BooleanField(label="Bone or joint pains", required=False)
 
-    appetite = forms.ChoiceField(
-        label="Appetite",
-        choices=(("GOOD", "Good"), ("NORMAL", "Normal"), ("POOR", "Poor")),
-        widget=forms.RadioSelect,
-        required=True,
-    )
+    appetite = YesNoField("Does the child not feel like eating and never feels hungry?")
+
 
     # Girls (Age ≥10 only)
     menarche_started = forms.BooleanField(label="Has menarche started?", required=False)
-    menarche_age_years = forms.DecimalField(label="Age at 1st period (years)", max_digits=4, decimal_places=1, required=False)
-    pads_per_day = forms.IntegerField(label="Heavy bleeding – pads/day", required=False, min_value=0)
+
+    _MENARCHE_AGE_CHOICES = [("", "Select age"), *[(str(i), str(i)) for i in range(10, 19)]]
+    menarche_age_years = forms.TypedChoiceField(
+        label="Age at 1st period (years)",
+        choices=_MENARCHE_AGE_CHOICES,
+        required=False,
+        coerce=lambda x: int(x) if x else None,
+        widget=forms.Select,
+    )
+
+    _PADS_PER_DAY_CHOICES = [("", "Select"), *[(str(i), str(i)) for i in range(1, 11)]]
+    pads_per_day = forms.TypedChoiceField(
+        label="Heavy bleeding – pads/day",
+        choices=_PADS_PER_DAY_CHOICES,
+        required=False,
+        coerce=lambda x: int(x) if x else None,
+        widget=forms.Select,
+    )
+
     bleeding_clots = forms.BooleanField(label="Heavy bleeding – passing clots", required=False)
-    cycle_length_days = forms.IntegerField(label="Cycle length (days between menses)", required=False, min_value=0)
+
+    _CYCLE_LENGTH_CHOICES = (
+        ("", "Select"),
+        ("LT_45", "Less than 45 days"),
+        ("GT_45", "More than 45 days"),
+    )
+    cycle_length_days = forms.ChoiceField(
+        label="Cycle length (days between menses)",
+        choices=_CYCLE_LENGTH_CHOICES,
+        required=False,
+        widget=forms.Select,
+    )
+
 
     # SECTION D
     diet_type = forms.ChoiceField(
@@ -102,27 +151,32 @@ class NewScreeningForm(forms.ModelForm):
         required=True,
     )
 
-    breakfast_eaten = YesNoField("Breakfast eaten?")
-    lunch_eaten = YesNoField("Lunch eaten at school?")
-    green_leafy_veg = YesNoField("Green leafy veg (Palak/Methi/Amaranth)")
-    other_vegetables = YesNoField("Other vegetables")
-    fruits = YesNoField("Fruits")
-    dal_pulses_beans = YesNoField("Dal / Pulses / Beans")
-    milk_curd = YesNoField("Milk / Curd")
-    egg = YesNoField("Egg")
-    fish_chicken_meat = YesNoField("Fish / Chicken / Meat")
-    nuts_groundnuts = YesNoField("Nuts / Groundnuts")
-    millet_whole_grains = YesNoField("Millet / Whole grains")
-    ssb_or_packaged_snacks = YesNoField("SSB (Sugary Drinks) or Packaged Snacks eaten?")
+    breakfast_eaten = YesNoSelectField("Breakfast eaten?")
+    lunch_eaten = YesNoSelectField("Lunch eaten at school?")
+    green_leafy_veg = YesNoSelectField("Green leafy veg (Palak/Methi/Amaranth)")
+    other_vegetables = YesNoSelectField("Other vegetables")
+    fruits = YesNoSelectField("Fruits")
+    dal_pulses_beans = YesNoSelectField("Dal / Pulses / Beans")
+    milk_curd = YesNoSelectField("Milk / Curd")
+    egg = YesNoSelectField("Egg")
+    fish_chicken_meat = YesNoSelectField("Fish / Chicken / Meat")
+    nuts_groundnuts = YesNoSelectField("Nuts / Groundnuts")
+    ssb_or_packaged_snacks = YesNoSelectField("SSB (Sugary Drinks) or Packaged Snacks eaten?")
 
     # SECTION E
-    deworming_taken = YesNoField("Deworming taken in last 6–12 months?")
+    deworming_taken = forms.ChoiceField(
+        label="Deworming taken in last 6–12 months?",
+        choices=(("yes", "Yes"), ("no", "No"), ("dont_know", "Don't Know")),
+        widget=forms.RadioSelect,
+        required=True,
+    )
+
     _DEWORMING_MONTHS_CHOICES = [
         ('', 'Select months'),
         *[(str(i), f"{i} month" if i == 1 else f"{i} months") for i in range(1, 13)],
     ]
     deworming_date = forms.TypedChoiceField(
-        label="If yes, how many months ago?",
+        label="How many months ago?",
         choices=_DEWORMING_MONTHS_CHOICES,
         required=False,
         coerce=lambda x: int(x) if x else None,
@@ -131,10 +185,10 @@ class NewScreeningForm(forms.ModelForm):
 
     # SECTION F
     hunger_vital_sign = forms.ChoiceField(
-        label='"We do not get enough food at home." (Last 12 months)',
+        label='"We get enough food at home." (Last 12 months)',
         choices=(("OFTEN_TRUE", "Often true"),
-                 ("SOMETIMES_TRUE", "Sometimes true"),
-                 ("NEVER_TRUE", "Never true")),
+                ("SOMETIMES_TRUE", "Sometimes true"),
+                ("NEVER_TRUE", "Never true")),
         widget=forms.RadioSelect,
         required=True,
     )
@@ -209,9 +263,26 @@ class NewScreeningForm(forms.ModelForm):
         if not (50 <= height_cm <= 250):
             raise ValidationError("Height seems out of range. Please re-check readings.")
 
-        muac = data.get("muac_cm")
-        if muac is not None and not (5 <= float(muac) <= 35):
-            raise ValidationError("MUAC seems out of range. Please re-check.")
+        muac_tape = data.get("muac_tape_color")
+        if months >= 60:
+            muac_tape = "GREEN"
+            data["muac_tape_color"] = "GREEN"
+        is_girl_10plus = (data.get("sex") == "F") and (months >= 120)
+        if not is_girl_10plus:
+            data["menarche_started"] = False
+            data["menarche_age_years"] = None
+            data["pads_per_day"] = None
+            data["bleeding_clots"] = False
+            data["cycle_length_days"] = None
+        elif not bool(data.get("menarche_started")):
+            data["menarche_age_years"] = None
+            data["pads_per_day"] = None
+            data["bleeding_clots"] = False
+            data["cycle_length_days"] = None
+
+        # Deworming follow-up gating
+        if (data.get("deworming_taken") or "") != "yes":
+            data["deworming_date"] = None
 
         answers = {
             # A
@@ -224,7 +295,7 @@ class NewScreeningForm(forms.ModelForm):
             # B
             "weight_kg_r1": str(w1) if w1 is not None else None,
             "height_cm_r1": str(h1) if h1 is not None else None,
-
+            "muac_tape_color": data.get("muac_tape_color"),
 
             # C
             "health_general_poor": bool(data.get("health_general_poor")),
@@ -273,7 +344,7 @@ class NewScreeningForm(forms.ModelForm):
             "age_years": age_years,
             "height_cm": height_cm,
             "weight_kg": weight_kg,
-            "muac_cm": float(muac) if muac is not None else None,
+            "muac_cm": None,
         }
         data["answers"] = answers
         return data
