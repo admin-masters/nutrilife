@@ -190,7 +190,7 @@ class NewScreeningForm(forms.ModelForm):
 
     # SECTION F
     hunger_vital_sign = forms.ChoiceField(
-        label='"We get enough food at home." (Last 12 months)',
+        label='"Do you always get as much food as you want to eat at home?',
         choices=(("OFTEN_TRUE", "Often true"),
                 ("SOMETIMES_TRUE", "Sometimes true"),
                 ("NEVER_TRUE", "Never true")),

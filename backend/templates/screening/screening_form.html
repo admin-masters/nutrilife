@@ -61,7 +61,7 @@
 <body>
   <div class="container">
     <h2>Screening – {{ student.full_name }}</h2>
-    <p class="muted">Complete Sections A–F, then submit to compute GREEN / YELLOW / RED.</p>
+    
 
     <form method="post" novalidate>
       {% csrf_token %}
@@ -73,7 +73,7 @@
       <!-- SECTION A -->
       <fieldset>
         <legend>Section A: Particulars</legend>
-        <p class="section-hint">Student/teacher details required for the screening record.</p>
+        
 
         <div class="grid">
           <div class="field">
@@ -112,10 +112,7 @@
       <!-- SECTION B -->
       <fieldset>
         <legend>Section B: Anthropometry</legend>
-        <p class="section-hint">
-          Enter one reading each for weight and height; the system will compute BMI and BAZ where applicable.
-          MUAC is used for ages 6–59 months only.
-        </p>
+        
 
         <div class="grid">
           <div class="field">
@@ -143,7 +140,7 @@
       <!-- SECTION C -->
       <fieldset>
         <legend>Section C: Quick Health Red Flags</legend>
-        <p class="section-hint">Tick any that apply. Any red-flag symptom may lead to RED status.</p>
+        
 
         <div class="checks">
           <div class="check">{{ form.health_general_poor }} <label for="{{ form.health_general_poor.id_for_label }}">{{ form.health_general_poor.label }}</label></div>
@@ -169,8 +166,7 @@
         </div>
 
         <fieldset id="girls-only-section" style="margin-top: 12px;">
-          <legend>Girls only (Age 10+)</legend>
-          <p class="section-hint">Visible only for girls age 10+. The following fields appear only if menarche has started.</p>
+          <legend>Girls only</legend>
 
           <div class="checks">
             <div class="check">{{ form.menarche_started }}
@@ -212,7 +208,7 @@
       <!-- SECTION D -->
       <fieldset>
         <legend>Section D: Diet Type & Diversity</legend>
-        <p class="section-hint">Answer Yes/No for each item. Low diversity contributes to YELLOW status.</p>
+        
 
         <div class="field radio">
           <label for="{{ form.diet_type.id_for_label }}">{{ form.diet_type.label }}</label>
@@ -268,7 +264,6 @@
       <!-- SECTION E -->
       <fieldset>
         <legend>Section E: Program Enablers</legend>
-        <p class="section-hint">Deworming is a key enabler; missing deworming contributes to YELLOW status.</p>
 
         <div class="grid">
           <div class="field radio">
@@ -289,7 +284,6 @@
       <!-- SECTION F -->
       <fieldset>
         <legend>Section F: Food Security</legend>
-        <p class="section-hint">If “Never true” or “Sometimes true”, status becomes RED per logic.</p>
 
         <div class="field radio">
           <label for="{{ form.hunger_vital_sign.id_for_label }}">{{ form.hunger_vital_sign.label }}</label>
