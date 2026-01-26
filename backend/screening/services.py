@@ -151,6 +151,10 @@ def compute_risk(
 
         if bleeding_clots:
             health_red.append("heavy_bleeding")
+            
+        bleeding_days = answers.get("bleeding_days")
+        if bleeding_days is not None and int(bleeding_days) > 10:
+            health_red.append("bleeding_days_gt_10")
 
         cycle_raw = answers.get("cycle_length_days")
         if isinstance(cycle_raw, str) and cycle_raw.upper() == "GT_45":

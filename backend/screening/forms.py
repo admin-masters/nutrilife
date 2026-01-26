@@ -127,7 +127,12 @@ class NewScreeningForm(forms.ModelForm):
     )
 
     bleeding_clots = forms.BooleanField(label="Heavy bleeding – passing clots", required=False)
-
+    bleeding_days = forms.IntegerField(
+        label="How many days does the bleeding last?",
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={'type': 'number', 'min': '0'}),
+    )
     _CYCLE_LENGTH_CHOICES = (
         ("", "Select"),
         ("LT_45", "Less than 45 days"),
@@ -274,11 +279,13 @@ class NewScreeningForm(forms.ModelForm):
             data["pads_per_day"] = None
             data["bleeding_clots"] = False
             data["cycle_length_days"] = None
+            data["bleeding_days"] = None
         elif not bool(data.get("menarche_started")):
             data["menarche_age_years"] = None
             data["pads_per_day"] = None
             data["bleeding_clots"] = False
             data["cycle_length_days"] = None
+            data["bleeding_days"] = None
 
         # Deworming follow-up gating
         if (data.get("deworming_taken") or "") != "yes":
@@ -315,7 +322,7 @@ class NewScreeningForm(forms.ModelForm):
             "pads_per_day": data.get("pads_per_day"),
             "bleeding_clots": bool(data.get("bleeding_clots")),
             "cycle_length_days": data.get("cycle_length_days"),
-
+            "bleeding_days": data.get("bleeding_days"),
             # D
             "diet_type": data.get("diet_type"),
             "breakfast_eaten": data.get("breakfast_eaten"),

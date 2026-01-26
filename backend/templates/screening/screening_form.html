@@ -192,6 +192,11 @@
                 <label for="{{ form.cycle_length_days.id_for_label }}">{{ form.cycle_length_days.label }}</label>
                 {{ form.cycle_length_days }}
               </div>
+              <div class="field">
+                <label for="{{ form.bleeding_days.id_for_label }}">{{ form.bleeding_days.label }}</label>
+                {{ form.bleeding_days }}
+                {% if form.bleeding_days.errors %}<div class="errors">{{ form.bleeding_days.errors }}</div>{% endif %}
+              </div>
             </div>
 
             <div class="checks" style="margin-top: 8px;">
