@@ -21,27 +21,8 @@
 <body>
   <div class="card">
     <h2>Teacher Dashboard – {{ org.name }}</h2>
-    <p class="muted">Choose screening language and class/division. Screen new students or re-screen existing students.</p>
 
     <form method="get" class="row">
-      <select name="lang">
-        <option value="en" {% if lang == "en" %}selected{% endif %}>English</option>
-        <option value="hi" {% if lang == "hi" %}selected{% endif %}>Hindi</option>
-        <option value="local" {% if lang == "local" %}selected{% endif %}>Local</option>
-      </select>
-
-      <select name="classroom">
-        <option value="">All Classes</option>
-        {% for c in classrooms %}
-          <option value="{{ c.id }}" {% if c.id|stringformat:"s" == selected_classroom_id %}selected{% endif %}>
-            Class {{ c.grade }} - {{ c.division }}
-          </option>
-        {% endfor %}
-      </select>
-
-      <input name="q" placeholder="Search student..." value="{{ q }}"/>
-
-      <button class="btn" type="submit" style="border:none;">Apply</button>
       <a class="btn" href="{{ add_student_url }}">Screening form for a new student</a>
     </form>
   </div>

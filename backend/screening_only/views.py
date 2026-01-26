@@ -566,7 +566,11 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
     q = (request.GET.get("q") or "").strip()
     lang = (request.GET.get("lang") or "en").strip().lower()
 
-    students = Student.objects.filter(organization=org).select_related("classroom")
+    students = (
+        Student.objects.filter(organization=org, screenings__teacher=request.user)
+        .distinct()
+        .select_related("classroom")
+    )
 
     if classroom_id:
         students = students.filter(classroom_id=classroom_id)
@@ -581,7 +585,10 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
     # Annotate last screening
     from django.db.models import OuterRef, Subquery
 
-    last_screening = Screening.objects.filter(student=OuterRef("pk")).order_by("-screened_at")
+    last_screening = (
+        Screening.objects.filter(student=OuterRef("pk"), teacher=request.user)
+        .order_by("-screened_at")
+    )
     students = students.annotate(
         last_screening_id=Subquery(last_screening.values("id")[:1]),
         last_screened_at=Subquery(last_screening.values("screened_at")[:1]),

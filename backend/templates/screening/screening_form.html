@@ -215,7 +215,11 @@
           {{ form.diet_type }}
           {% if form.diet_type.errors %}<div class="errors">{{ form.diet_type.errors }}</div>{% endif %}
         </div>
-
+        
+        <p class="section-hint" style="margin-top: 12px; font-weight: 700; color: #111;">
+          Did the student have the following in last 24 hours?
+        </p>
+        
         <div class="grid" style="margin-top: 8px;">
           <div class="field radio">
             <label for="{{ form.breakfast_eaten.id_for_label }}">{{ form.breakfast_eaten.label }}</label>
@@ -229,10 +233,6 @@
             {% if form.lunch_eaten.errors %}<div class="errors">{{ form.lunch_eaten.errors }}</div>{% endif %}
           </div>
         </div>
-        
-        <p class="section-hint" style="margin-top: 12px; font-weight: 700; color: #111;">
-          Did the student have the following in last 24 hours?
-        </p>
 
         <div class="grid">
           <div class="field radio"><label>{{ form.green_leafy_veg.label }}</label>{{ form.green_leafy_veg }}{% if form.green_leafy_veg.errors %}<div class="errors">{{ form.green_leafy_veg.errors }}</div>{% endif %}</div>
