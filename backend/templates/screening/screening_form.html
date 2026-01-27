@@ -343,7 +343,7 @@
           <div class="qtitle">
             <label for="{{ form.menarche_started.id_for_label }}">{{ form.menarche_started.label }}</label>
           </div>
-          <div class="ask-child">Ask the child- If her menstruation has started. Put this ask the child question just above the selection box.</div>
+          <div class="ask-child">Ask the child- If her menstruation has started.</div>
 
           <div style="display:none;">
             {{ form.menarche_started }}
@@ -371,7 +371,7 @@
             <div class="qtitle">
               <label for="{{ form.pads_per_day.id_for_label }}">{{ form.pads_per_day.label }}</label>
             </div>
-            <div class="ask-child">Ask the child- How many pads per day does she need on heavy bleeding days.</div>
+            <div class="ask-child">Ask the child- How many pads per day does she need on heavy bleeding days?</div>
             {{ form.pads_per_day }}
             {% if form.pads_per_day.errors %}<div class="errors">{{ form.pads_per_day.errors }}</div>{% endif %}
           </div>
@@ -548,8 +548,9 @@
         <div class="grid">
           <div class="field radio">
             <label for="{{ form.deworming_taken.id_for_label }}">{{ form.deworming_taken.label }}</label>
-            {{ form.deworming_taken }}
             <div class="ask-child">Ask the child- Did you take the big pill for deworming?</div>
+            {{ form.deworming_taken }}
+            
             {% if form.deworming_taken.errors %}<div class="errors">{{ form.deworming_taken.errors }}</div>{% endif %}
           </div>
           <div class="field" id="deworming-months-field">

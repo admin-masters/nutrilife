@@ -139,7 +139,7 @@ class NewScreeningForm(forms.ModelForm):
         ("GT_45", "More than 45 days"),
     )
     cycle_length_days = forms.ChoiceField(
-        label="Cycle length (days between menses)",
+        label="Irregular cycles (>45 days apart)?",
         choices=_CYCLE_LENGTH_CHOICES,
         required=False,
         widget=forms.Select,
@@ -190,7 +190,7 @@ class NewScreeningForm(forms.ModelForm):
 
     # SECTION F
     hunger_vital_sign = forms.ChoiceField(
-        label='"Do you always get as much food as you want to eat at home?',
+        label='Do you always get as much food as you want to eat at home?',
         choices=(("OFTEN_TRUE", "Often true"),
                 ("SOMETIMES_TRUE", "Sometimes true"),
                 ("NEVER_TRUE", "Never true")),
