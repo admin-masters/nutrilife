@@ -12,12 +12,21 @@
     a.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;text-decoration:none}
     .muted{color:#666}
     select{padding:8px;border:1px solid #ddd;border-radius:10px}
+    .sub-heading {
+      font-size: 15px;
+      font-weight: 400;     /* Thin text */
+      color: #888;          /* Grey */
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+    
   </style>
 </head>
 <body>
   <div class="card">
     <h2>School Screening Status - {{ org.name }}</h2>
-    <h3>Check screening status class-wise</h3>
+    <h3 class="sub-heading">Check screening status class-wise</h3>
+
     <form method="get">
       <label>Academic year:</label>
       <select name="ay" onchange="this.form.submit()">

@@ -23,6 +23,7 @@ urlpatterns = [
 
     # Teacher flow
     path("teacher/auth-required/", views.teacher_auth_required, name="teacher_auth_required"),
+    path("teacher/onboarding/", views.teacher_onboarding, name="teacher_onboarding"),
     path("teacher/dashboard/", views.teacher_dashboard, name="teacher_dashboard"),
     path("teacher/<slug:token>/", views.teacher_access_portal, name="teacher_access_portal"),
 

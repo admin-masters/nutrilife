@@ -210,6 +210,27 @@ def teacher_auth_required(request: HttpRequest) -> HttpResponse:
         },
     )
 
+@require_screening_only_teacher
+def teacher_onboarding(request: HttpRequest) -> HttpResponse:
+    """
+    Teacher onboarding: show guide/training, then continue to dashboard.
+    """
+    org = request.org  # set by the decorator/middleware
+    guide_url = getattr(settings, "SCREENING_GUIDE_URL", "") or "#"
+    training_url = getattr(settings, "SCREENING_TRAINING_VIDEO_URL", "") or "#"
+    continue_url = reverse("screening_only:teacher_dashboard")
+
+    return render(
+        request,
+        "screening_only/admin_onboarding.html",
+        {
+            "org": org,
+            "guide_url": guide_url,
+            "training_url": training_url,
+            "continue_url": continue_url,
+        },
+    )
+
 
 def google_oauth_start(request: HttpRequest) -> HttpResponse:
     client_id = getattr(settings, "GOOGLE_OAUTH_CLIENT_ID", None) or ""
@@ -449,7 +470,7 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id", "sp_teacher_email", "sp_teacher_full_name", "sp_teacher_terms_ok"]:
             request.session.pop(k, None)
 
-        return redirect("screening_only:teacher_dashboard")       
+        return redirect("screening_only:teacher_onboarding")      
         
 
     messages.error(request, "Unknown login flow.")

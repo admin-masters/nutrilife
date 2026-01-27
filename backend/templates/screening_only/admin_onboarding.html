@@ -20,17 +20,9 @@
     <ul>
       <li><a class="link" href="{{ guide_url }}" target="_blank">Download Screening Guide (PDF)</a></li>
       <li><a class="link" href="{{ training_url }}" target="_blank">Watch Training Video</a></li>
-      <li><a class="link" href="{{ terms_url }}" target="_blank">Terms and Conditions</a></li>
     </ul>
 
-    <form method="post">
-      {% csrf_token %}
-      <label style="display:block;margin-top:12px;">
-        <input type="checkbox" name="accept_terms" {% if accepted %}checked{% endif %}/>
-        I accept the <a class="link" href="{{ terms_url }}" target="_blank">terms and conditions</a>
-      </label>
-      <button type="submit">Continue</button>
-    </form>
+    <a class="btn" href="{{ continue_url }}" style="display:inline-block;margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;text-decoration:none;">Continue</a>
   </div>
 </body>
 </html>

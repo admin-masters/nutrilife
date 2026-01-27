@@ -12,6 +12,19 @@
     button{margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;width:100%}
     .muted{color:#666}
     a{color:#111;text-decoration:underline}
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    
+    .checkbox-row input[type="checkbox"] {
+      margin: 0;
+      width: auto;
+    }
+    
   </style>
 </head>
 <body>
@@ -23,9 +36,17 @@
       <label>Full Name</label>{{ form.full_name }}
       <label>Email Address</label>{{ form.email }}
 
-      <label style="display:block;margin-top:12px;">
-        {{ form.accept_terms }} I accept the <a href="{{ terms_url }}" target="_blank" style="color:#111;text-decoration:underline;">terms and conditions</a>
-      </label>
+      <div class="checkbox-row">
+        {{ form.accept_terms }}
+      
+        <span>
+          I accept the 
+          <a href="{{ terms_url }}" target="_blank">
+            terms and conditions
+          </a>
+        </span>
+      </div>
+      
 
       <button type="submit">Continue to Sign In</button>
     </form>
