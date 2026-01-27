@@ -149,14 +149,14 @@
   <div class="card">
 
     <!-- Success Icon -->
-    <div class="check-icon">✓</div>
+    
 
     <!-- Title -->
     <h2>School Registered Successfully</h2>
-
+    <div class="check-icon">✓</div>
     <!-- Description -->
     <p class="school-name">
-      <strong>ABC School</strong> is now enrolled in the Nutrilift screening program.
+      <strong>{{ org.name }}</strong> is now enrolled in the Nutrilift screening program.
     </p>
 
     <!-- Next Step -->
@@ -167,16 +167,6 @@
       </div>
     </div>
 
-    <!-- Authorized Emails -->
-    <div class="auth-box">
-      <strong>Authorized emails:</strong><br><br>
-
-      <code>{{ principal_email }}</code><br>
-
-      {% if operator_email %}
-        <code>{{ operator_email }}</code>
-      {% endif %}
-    </div>
 
     <!-- Google Login Button -->
     <a href="{{ google_start_url }}" class="google-btn">
