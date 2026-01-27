@@ -17,7 +17,7 @@ urlpatterns = [
 
     # Admin flow
     path("admin/<slug:token>/auth/", views.admin_auth_required, name="admin_auth_required"),
-    path("admin/onboarding/", views.admin_onboarding, name="admin_onboarding"),
+    #path("admin/onboarding/", views.admin_onboarding, name="admin_onboarding"),
     path("admin/link/", views.admin_link_dashboard, name="admin_link_dashboard"),
     path("admin/dashboard/", views.admin_performance_dashboard, name="admin_performance_dashboard"),
 

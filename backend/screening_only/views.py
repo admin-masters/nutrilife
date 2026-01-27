@@ -342,8 +342,26 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         # clear oauth session
         for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id"]:
             request.session.pop(k, None)
-
-        return redirect("screening_only:admin_onboarding")
+          # Auto-accept terms and mark onboarding as completed
+        if not _is_terms_accepted(user, org, ScreeningTermsAcceptance.ActorRole.ORG_ADMIN):
+            ScreeningTermsAcceptance.objects.create(
+                organization=org,
+                user=user,
+                actor_role=ScreeningTermsAcceptance.ActorRole.ORG_ADMIN,
+                version=TERMS_VERSION,
+                ip_address=_get_ip(request),
+                user_agent=(request.META.get("HTTP_USER_AGENT") or "")[:255],
+            )
+  
+        # Mark onboarding as completed
+        try:
+            prof = org.screening_only_profile
+            if not prof.onboarding_completed_at:
+                prof.onboarding_completed_at = timezone.now()
+                prof.save(update_fields=["onboarding_completed_at"])
+        except Exception:
+            pass
+        return redirect("screening_only:admin_link_dashboard")
 
     # Teacher authorization: logged-in email must match entered email:contentReference[oaicite:15]{index=15}.
     if role == "teacher":
