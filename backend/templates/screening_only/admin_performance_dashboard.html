@@ -16,8 +16,8 @@
 </head>
 <body>
   <div class="card">
-    <h2>{{ org.name }} – Screening Dashboard</h2>
-
+    <h2>School Screening Status - {{ org.name }}</h2>
+    <h3>Check screening status class-wise</h3>
     <form method="get">
       <label>Academic year:</label>
       <select name="ay" onchange="this.form.submit()">
@@ -27,7 +27,7 @@
       </select>
     </form>
 
-    <p><a class="btn" href="{{ link_dashboard_url }}">Back to Link Sharing</a></p>
+    <p><a class="btn" href="{{ link_dashboard_url }}">Back to Teacher Link</a></p>
   </div>
 
   <div class="card">
@@ -35,7 +35,7 @@
       <thead>
         <tr>
           <th>Class</th>
-          <th>Division</th>
+          <th>Section</th>
           <th>Students screened once</th>
           <th>Students screened twice</th>
           <th>Total students screened</th>
@@ -51,7 +51,7 @@
             <td>{{ r.total_students }}</td>
           </tr>
         {% empty %}
-          <tr><td colspan="5">No screenings found for this period.</td></tr>
+          <tr><td colspan="5">No students screened yet</td></tr>
         {% endfor %}
       </tbody>
     </table>
