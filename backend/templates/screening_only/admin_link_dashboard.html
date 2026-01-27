@@ -1,43 +1,178 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Screening Link Sharing Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Start Student Screening</title>
+
   <style>
-    body{font-family:system-ui;max-width:980px;margin:0 auto;padding:1rem;background:#fafafa}
-    .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px;margin-bottom:12px}
-    a.btn{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;text-decoration:none}
-    textarea{width:100%;min-height:160px;padding:10px;border:1px solid #ddd;border-radius:10px}
-    .muted{color:#666}
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem;
+      background: #fafafa;
+      color: #111;
+    }
+
+    h1 {
+      font-size: 26px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 6px;
+      display: block;
+      letter-spacing: 0.4px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #111;
+      background: #111;
+      color: #fff;
+      text-decoration: none;
+      text-align: center;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: #111;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      resize: vertical;
+      font-size: 14px;
+      line-height: 1.4;
+      background: #fafafa;
+    }
+
+    .muted {
+      color: #777;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .status-sub {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .btn-wrap {
+      margin-top: 12px;
+    }
   </style>
+
   <script>
     function copyMessage() {
       const el = document.getElementById("teacherMessage");
       el.select();
+      el.setSelectionRange(0, 99999);
       document.execCommand("copy");
-      alert("Copied teacher message.");
+      alert("Message copied!");
     }
   </script>
 </head>
+
 <body>
-  <div class="card">
-    <h2>Nutrilift – Screening Link Sharing Dashboard</h2>
-  </div>
 
-  <div class="card">
-    <h3>School Screening Link</h3>
-    <p><a class="btn" href="{{ teacher_link }}" target="_blank">Open Teacher Link</a></p>
-    <p class="muted">{{ teacher_link }}</p>
-  </div>
+  <!-- PAGE HEADER -->
+  <h1>Start Student Screening</h1>
+  <p class="subtitle">
+    Share the details below with teachers to start student screening.
+  </p>
 
+
+  <!-- SHARE WITH TEACHERS -->
   <div class="card">
-    <h3>Pre-written Teacher Message</h3>
-    <textarea id="teacherMessage" readonly>{{ teacher_message }}</textarea>
-    <p style="margin-top:10px;">
-      <a class="btn" href="javascript:copyMessage()">Copy message</a>
-      <a class="btn" href="{{ dashboard_url }}">Go to Dashboard</a>
+
+    <h3>Share with Teachers</h3>
+
+    <!-- Teacher Link -->
+    <label class="label">TEACHER SCREENING LINK</label>
+
+    <a class="btn" href="{{ teacher_link }}" target="_blank">
+      Open Teacher Link
+    </a>
+
+    <p class="muted">
+      Teachers will fill the screening form using this link.
     </p>
+
+
+    <!-- Message Box -->
+    <label class="label" style="margin-top:18px;">
+      MESSAGE TO SHARE ON WHATSAPP
+    </label>
+
+    <textarea id="teacherMessage" readonly>{{ teacher_message }}</textarea>
+
+
+    <!-- Copy Button -->
+    <div class="btn-wrap">
+      <button class="btn btn-outline" onclick="copyMessage()">
+        Copy Message
+      </button>
+    </div>
+
   </div>
+
+
+  <!-- SCREENING STATUS -->
+  <h2 class="section-title">School Screening Status</h2>
+
+  <p class="status-sub">
+    Check screening progress after teachers start filling forms.
+  </p>
+
+  <a class="btn btn-outline" href="{{ dashboard_url }}">
+    View School Screening Status
+  </a>
+
+
 </body>
 </html>
