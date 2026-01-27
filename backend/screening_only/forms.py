@@ -2,7 +2,7 @@ from django import forms
 from accounts.models import User
 
 class SchoolEnrollmentForm(forms.Form):
-    school_name = forms.CharField(max_length=255)
+    school_name = forms.CharField(max_length=255, required=True)
     #district = forms.CharField(max_length=128, required=False)
     address = forms.CharField(max_length=255, required=True)
 
@@ -11,7 +11,7 @@ class SchoolEnrollmentForm(forms.Form):
     country = forms.CharField(max_length=64, required=True, initial="India")
 
     principal_name = forms.CharField(max_length=255, required=True)
-    principal_email = forms.EmailField()
+    principal_email = forms.EmailField(required=True)
 
     operator_name = forms.CharField(max_length=255, required=True)
     operator_email = forms.EmailField(required=True)
@@ -21,14 +21,11 @@ class SchoolEnrollmentForm(forms.Form):
         required=True,
     )
 
+    terms_accepted = forms.BooleanField(required=True, label="")
+
     def clean(self):
         cleaned = super().clean()
-        pe = (cleaned.get("principal_email") or "").strip().lower()
-        oe = (cleaned.get("operator_email") or "").strip().lower()
-
-        if oe and oe == pe:
-            # Allow same person to be both, but normalize by clearing operator if identical.
-            cleaned["operator_email"] = ""
+        # Same person can be both principal and operator; we keep both emails when required.
         return cleaned
 
 

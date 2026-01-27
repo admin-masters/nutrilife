@@ -9,8 +9,10 @@
     .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:16px}
     label{display:block;margin-top:10px;font-weight:600}
     input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin-top:6px}
+    input[type="checkbox"]{width:auto;margin-right:8px;margin-top:0}
     button{margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff}
     .muted{color:#666}
+    .errorlist{margin:4px 0 0;padding:0;list-style:none;color:#c00;font-size:0.9em}
   </style>
 </head>
 <body>
@@ -18,7 +20,6 @@
     
     <div style="text-align:center;padding:20px 0;">
       <h3 style="margin-bottom:10px;">Already Registered?</h3>
-      <p class="muted" style="margin-bottom:16px;">Sign in with your Google account if you're already a school admin.</p>
       <a href="{% url 'screening_only:existing_admin_login' %}" 
          style="display:inline-block;padding:12px 24px;background:#4285f4;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
         Sign in with Google
@@ -31,29 +32,54 @@
       {% csrf_token %}
       {{ form.non_field_errors }}
 
-      <label>School Name</label>{{ form.school_name }}
+      <label for="{{ form.school_name.id_for_label }}">School Name</label>
+      {{ form.school_name }}
+      {{ form.school_name.errors }}
 
-      
-      <label>Address </label>{{ form.address }}
+      <label for="{{ form.address.id_for_label }}">Address</label>
+      {{ form.address }}
+      {{ form.address.errors }}
 
-      <label>City </label>{{ form.city }}
-      <label>State </label>{{ form.state }}
-      <label>Country</label>{{ form.country }}
+      <label for="{{ form.city.id_for_label }}">City</label>
+      {{ form.city }}
+      {{ form.city.errors }}
+
+      <label for="{{ form.state.id_for_label }}">State</label>
+      {{ form.state }}
+      {{ form.state.errors }}
+
+      <label for="{{ form.country.id_for_label }}">Country</label>
+      {{ form.country }}
+      {{ form.country.errors }}
 
       <hr style="margin:14px 0;border:none;border-top:1px solid #eee">
 
-      <label>Principal Name </label>{{ form.principal_name }}
-      <label>Principal Email</label>{{ form.principal_email }}
+      <label for="{{ form.principal_name.id_for_label }}">Principal Name</label>
+      {{ form.principal_name }}
+      {{ form.principal_name.errors }}
 
-      <label>Program In-charge/School Coordinator(Person managing Nutrilift in your school) </label>{{ form.operator_name }}
-      <label>Program In-charge's email </label>{{ form.operator_email }}
+      <label for="{{ form.principal_email.id_for_label }}">Principal Email</label>
+      {{ form.principal_email }}
+      {{ form.principal_email.errors }}
 
-      <label>Local Language Code </label>
+      <label for="{{ form.operator_name.id_for_label }}">Program In-charge/School Coordinator (Person managing Nutrilift in your school)</label>
+      {{ form.operator_name }}
+      {{ form.operator_name.errors }}
+
+      <label for="{{ form.operator_email.id_for_label }}">Program In-charge's email</label>
+      {{ form.operator_email }}
+      {{ form.operator_email.errors }}
+
+      <label for="{{ form.local_language_code.id_for_label }}">Local Language Code</label>
       {{ form.local_language_code }}
+      {{ form.local_language_code.errors }}
+
       <label style="display:flex;align-items:center;margin-top:16px;font-weight:400;">
-        <input type="checkbox" name="terms_accepted" required style="width:auto;margin-right:8px;margin-top:0;">
+        {{ form.terms_accepted }}
         <span>I agree to the <a href="#" onclick="window.open('https://example.com/terms', '_blank'); return false;" style="color:#4285f4;text-decoration:underline;">Terms and Conditions</a></span>
       </label>
+      {{ form.terms_accepted.errors }}
+
       <button type="submit">Submit Registration</button>
     </form>
   </div>
