@@ -100,7 +100,7 @@ def enroll_school(request: HttpRequest) -> HttpResponse:
             )
 
             messages.success(request, "School registered. Next: sign in with your authorized Google account.")
-            return redirect("screening_only:enroll_success", token=org.screening_link_token)
+            return redirect("screening_only:admin_auth_required", token=org.screening_link_token)
     else:
         form = SchoolEnrollmentForm()
 

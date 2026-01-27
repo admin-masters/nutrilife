@@ -8,7 +8,7 @@ urlpatterns = [
     # School enrollment (public)
     path("enroll/login/", views.existing_admin_login, name="existing_admin_login"),
     path("enroll/", views.enroll_school, name="enroll_school"),
-    path("enroll/success/<slug:token>/", views.enroll_success, name="enroll_success"),
+    #path("enroll/success/<slug:token>/", views.enroll_success, name="enroll_success"),
 
     # Google OAuth
     path("auth/google/start/", views.google_oauth_start, name="google_oauth_start"),
