@@ -20,7 +20,7 @@
     @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
 
     .field { margin: 8px 0; }
-    .field label { display: block; font-size: 13px; color: #333; margin-bottom: 4px; }
+    .field label { display: block; font-size: 13px; color: #222; font-weight: 600; margin-bottom: 4px; }
     .field input[type="text"], .field input[type="number"], .field input[type="date"], .field select, .field textarea {
       width: 100%;
       box-sizing: border-box;
@@ -55,6 +55,12 @@
       cursor: pointer;
     }
     button.primary { background: #111; color: #fff; border-color: #111; }
+
+    .ask-child { color: #888; font-size: 12px; margin: 2px 0 6px 0; }
+    .qrow { border: 1px solid #f0f0f0; border-radius: 12px; background: #fcfcfc; padding: 10px 12px; margin: 10px 0; }
+    .qrow .qtitle { font-size: 14px; font-weight: 700; color: #111; margin: 0 0 4px 0; }
+    .qrow .qtitle label { font-size: 14px; font-weight: 700; color: #111; margin: 0; display: inline; }
+    .qrow select { margin-top: 4px; }
   </style>
 </head>
 
@@ -140,128 +146,402 @@
       <!-- SECTION C -->
       <fieldset>
         <legend>Section C: Quick Health Red Flags</legend>
-        
 
-        <div class="checks">
-          <div class="check">{{ form.health_general_poor }} <label for="{{ form.health_general_poor.id_for_label }}">{{ form.health_general_poor.label }}</label></div>
-          <div class="check">{{ form.health_pallor }} <label for="{{ form.health_pallor.id_for_label }}">{{ form.health_pallor.label }}</label></div>
-          <div class="check">{{ form.health_fatigue_dizzy_faint }} <label for="{{ form.health_fatigue_dizzy_faint.id_for_label }}">{{ form.health_fatigue_dizzy_faint.label }}</label></div>
-          <div class="check">{{ form.health_breathlessness }} <label for="{{ form.health_breathlessness.id_for_label }}">{{ form.health_breathlessness.label }}</label></div>
-          <div class="check">{{ form.health_frequent_infections }} <label for="{{ form.health_frequent_infections.id_for_label }}">{{ form.health_frequent_infections.label }}</label></div>
-          <div class="check">{{ form.health_chronic_cough_or_diarrhea }} <label for="{{ form.health_chronic_cough_or_diarrhea.id_for_label }}">{{ form.health_chronic_cough_or_diarrhea.label }}</label></div>
-          <div class="check">{{ form.health_visible_worms }} <label for="{{ form.health_visible_worms.id_for_label }}">{{ form.health_visible_worms.label }}</label></div>
-          <div class="check">{{ form.health_dental_or_gum_or_ulcers }} <label for="{{ form.health_dental_or_gum_or_ulcers.id_for_label }}">{{ form.health_dental_or_gum_or_ulcers.label }}</label></div>
-          <div class="check">{{ form.health_night_vision_difficulty }} <label for="{{ form.health_night_vision_difficulty.id_for_label }}">{{ form.health_night_vision_difficulty.label }}</label></div>
-          <div class="check">{{ form.health_bone_or_joint_pain }} <label for="{{ form.health_bone_or_joint_pain.id_for_label }}">{{ form.health_bone_or_joint_pain.label }}</label></div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_general_poor.id_for_label }}">{{ form.health_general_poor.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Do you feel healthy?</div>
+
+        <div style="display:none;">
+          {{ form.health_general_poor }}
         </div>
 
-        {% if form.health_general_poor.errors or form.health_pallor.errors or form.health_fatigue_dizzy_faint.errors %}
-          <div class="errors">Please review the health checkbox inputs.</div>
-        {% endif %}
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_general_poor.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
 
-        <div class="field radio" style="margin-top: 12px;">
-          <label for="{{ form.appetite.id_for_label }}">{{ form.appetite.label }}</label>
-          {{ form.appetite }}
-          {% if form.appetite.errors %}<div class="errors">{{ form.appetite.errors }}</div>{% endif %}
+        {% if form.health_general_poor.errors %}<div class="errors">{{ form.health_general_poor.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_pallor.id_for_label }}">{{ form.health_pallor.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Does the child have pallor?</div>
+
+        <div style="display:none;">
+          {{ form.health_pallor }}
         </div>
 
-        <fieldset id="girls-only-section" style="margin-top: 12px;">
-          <legend>Girls only</legend>
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_pallor.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
 
-          <div class="checks">
-            <div class="check">{{ form.menarche_started }}
-              <label for="{{ form.menarche_started.id_for_label }}">{{ form.menarche_started.label }}</label>
-            </div>
+        {% if form.health_pallor.errors %}<div class="errors">{{ form.health_pallor.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_fatigue_dizzy_faint.id_for_label }}">{{ form.health_fatigue_dizzy_faint.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- If they remember having fainted while doing normal work/play, or if the child feels very too tired to do routine work/play?</div>
+
+        <div style="display:none;">
+          {{ form.health_fatigue_dizzy_faint }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_fatigue_dizzy_faint.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_fatigue_dizzy_faint.errors %}<div class="errors">{{ form.health_fatigue_dizzy_faint.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_breathlessness.id_for_label }}">{{ form.health_breathlessness.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- If they feel breathless on doing routine activities or while walking normally?</div>
+
+        <div style="display:none;">
+          {{ form.health_breathlessness }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_breathlessness.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_breathlessness.errors %}<div class="errors">{{ form.health_breathlessness.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_frequent_infections.id_for_label }}">{{ form.health_frequent_infections.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Does the child fall sick very often? Has been ill 3 times or more in the last month?</div>
+
+        <div style="display:none;">
+          {{ form.health_frequent_infections }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_frequent_infections.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_frequent_infections.errors %}<div class="errors">{{ form.health_frequent_infections.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_chronic_cough_or_diarrhea.id_for_label }}">{{ form.health_chronic_cough_or_diarrhea.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Does the child have cough and has had it for last 4 weeks or more, or does the child have loose motions and it has lasted more than 2 weeks?</div>
+
+        <div style="display:none;">
+          {{ form.health_chronic_cough_or_diarrhea }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_chronic_cough_or_diarrhea.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_chronic_cough_or_diarrhea.errors %}<div class="errors">{{ form.health_chronic_cough_or_diarrhea.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_visible_worms.id_for_label }}">{{ form.health_visible_worms.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- If they have ever seen small worms in their stool.</div>
+
+        <div style="display:none;">
+          {{ form.health_visible_worms }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_visible_worms.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_visible_worms.errors %}<div class="errors">{{ form.health_visible_worms.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_dental_or_gum_or_ulcers.id_for_label }}">{{ form.health_dental_or_gum_or_ulcers.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- If they have teeth pain, gum bleeding or mouth ulcers?</div>
+
+        <div style="display:none;">
+          {{ form.health_dental_or_gum_or_ulcers }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_dental_or_gum_or_ulcers.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_dental_or_gum_or_ulcers.errors %}<div class="errors">{{ form.health_dental_or_gum_or_ulcers.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_night_vision_difficulty.id_for_label }}">{{ form.health_night_vision_difficulty.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- If they stumble while walking in the dark since they can't see properly</div>
+
+        <div style="display:none;">
+          {{ form.health_night_vision_difficulty }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_night_vision_difficulty.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_night_vision_difficulty.errors %}<div class="errors">{{ form.health_night_vision_difficulty.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.health_bone_or_joint_pain.id_for_label }}">{{ form.health_bone_or_joint_pain.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- If they have pain in their arms/legs/joints, although they haven't been hurt and even without hard work/play?</div>
+
+        <div style="display:none;">
+          {{ form.health_bone_or_joint_pain }}
+        </div>
+
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_bone_or_joint_pain.id_for_label }}">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+
+        {% if form.health_bone_or_joint_pain.errors %}<div class="errors">{{ form.health_bone_or_joint_pain.errors }}</div>{% endif %}
+      </div>
+
+
+      <div class="field radio" style="margin-top: 12px;">
+        <label for="{{ form.appetite.id_for_label }}">{{ form.appetite.label }}</label>
+        {{ form.appetite }}
+        {% if form.appetite.errors %}<div class="errors">{{ form.appetite.errors }}</div>{% endif %}
+      </div>
+
+
+      <fieldset id="girls-only-section" style="margin-top: 12px;">
+        <legend>Girls only</legend>
+
+        <div class="qrow" style="margin-top: 10px;">
+          <div class="qtitle">
+            <label for="{{ form.menarche_started.id_for_label }}">{{ form.menarche_started.label }}</label>
+          </div>
+          <div class="ask-child">Ask the child- If her menstruation has started. Put this ask the child question just above the selection box.</div>
+
+          <div style="display:none;">
+            {{ form.menarche_started }}
           </div>
 
-          <div id="girls-menarche-details" style="margin-top: 8px;">
-            <div class="grid">
-              <div class="field">
-                <label for="{{ form.menarche_age_years.id_for_label }}">{{ form.menarche_age_years.label }}</label>
-                {{ form.menarche_age_years }}
-              </div>
-              <div class="field">
-                <label for="{{ form.pads_per_day.id_for_label }}">{{ form.pads_per_day.label }}</label>
-                {{ form.pads_per_day }}
-              </div>
-              <div class="field">
-                <label for="{{ form.cycle_length_days.id_for_label }}">{{ form.cycle_length_days.label }}</label>
-                {{ form.cycle_length_days }}
-              </div>
-              <div class="field">
-                <label for="{{ form.bleeding_days.id_for_label }}">{{ form.bleeding_days.label }}</label>
-                {{ form.bleeding_days }}
-                {% if form.bleeding_days.errors %}<div class="errors">{{ form.bleeding_days.errors }}</div>{% endif %}
-              </div>
-            </div>
+          <select class="yn-proxy" data-checkbox-id="{{ form.menarche_started.id_for_label }}">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
 
-            <div class="checks" style="margin-top: 8px;">
-              <div class="check">{{ form.bleeding_clots }}
-                <label for="{{ form.bleeding_clots.id_for_label }}">{{ form.bleeding_clots.label }}</label>
-              </div>
+          {% if form.menarche_started.errors %}<div class="errors">{{ form.menarche_started.errors }}</div>{% endif %}
+        </div>
+
+        <div id="girls-menarche-details" style="margin-top: 8px;">
+          <div class="qrow">
+            <div class="qtitle">
+              <label for="{{ form.menarche_age_years.id_for_label }}">{{ form.menarche_age_years.label }}</label>
             </div>
+            <div class="ask-child">Ask the child- Menstruation started at what age?</div>
+            {{ form.menarche_age_years }}
+            {% if form.menarche_age_years.errors %}<div class="errors">{{ form.menarche_age_years.errors }}</div>{% endif %}
           </div>
-        </fieldset>
 
+          <div class="qrow">
+            <div class="qtitle">
+              <label for="{{ form.pads_per_day.id_for_label }}">{{ form.pads_per_day.label }}</label>
+            </div>
+            <div class="ask-child">Ask the child- How many pads per day does she need on heavy bleeding days.</div>
+            {{ form.pads_per_day }}
+            {% if form.pads_per_day.errors %}<div class="errors">{{ form.pads_per_day.errors }}</div>{% endif %}
+          </div>
+
+          <div class="qrow">
+            <div class="qtitle">
+              <label for="{{ form.cycle_length_days.id_for_label }}">{{ form.cycle_length_days.label }}</label>
+            </div>
+            <div class="ask-child">Ask the child- After how many days do your menses happen again?</div>
+            {{ form.cycle_length_days }}
+            {% if form.cycle_length_days.errors %}<div class="errors">{{ form.cycle_length_days.errors }}</div>{% endif %}
+          </div>
+
+          <div class="qrow">
+            <div class="qtitle">
+              <label for="{{ form.bleeding_clots.id_for_label }}">{{ form.bleeding_clots.label }}</label>
+            </div>
+            <div class="ask-child">Ask the child- Does the child pass clots while bleeding?</div>
+
+            <div style="display:none;">
+              {{ form.bleeding_clots }}
+            </div>
+
+            <select class="yn-proxy" data-checkbox-id="{{ form.bleeding_clots.id_for_label }}">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+
+            {% if form.bleeding_clots.errors %}<div class="errors">{{ form.bleeding_clots.errors }}</div>{% endif %}
+          </div>
+        </div>
+      </fieldset>
       </fieldset>
 
-      <!-- SECTION D -->
+<!-- SECTION D -->
       <fieldset>
         <legend>Section D: Diet Type & Diversity</legend>
-        
 
-        <div class="field radio">
-          <label for="{{ form.diet_type.id_for_label }}">{{ form.diet_type.label }}</label>
-          {{ form.diet_type }}
-          {% if form.diet_type.errors %}<div class="errors">{{ form.diet_type.errors }}</div>{% endif %}
+
+      <div class="field radio">
+        <label for="{{ form.diet_type.id_for_label }}">{{ form.diet_type.label }}</label>
+
+        <div class="qrow" style="margin-top: 8px;">
+          {% for radio in form.diet_type %}
+            <div style="margin: 10px 0;">
+              <div style="display:flex; gap:10px; align-items:center;">
+                {{ radio.tag }}
+                <label for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+              </div>
+
+              {% if "Lacto-vegetarian" in radio.choice_label %}
+                <div class="ask-child">Ask the child- Do you drink milk or eat dahi or paneer at home?</div>
+              {% elif "Lacto-ovo-vegetarian" in radio.choice_label %}
+                <div class="ask-child">Ask the child- Do you eat eggs at home?</div>
+              {% elif "Non-vegetarian" in radio.choice_label %}
+                <div class="ask-child">Ask the child- Do you eat fish, chicken or mutton at home?</div>
+              {% endif %}
+            </div>
+          {% endfor %}
         </div>
-        
+
+        {% if form.diet_type.errors %}<div class="errors">{{ form.diet_type.errors }}</div>{% endif %}
+      </div>
+
         <p class="section-hint" style="margin-top: 12px; font-weight: 700; color: #111;">
           Did the student have the following in last 24 hours?
         </p>
-        
-        <div class="grid" style="margin-top: 8px;">
-          <div class="field radio">
-            <label for="{{ form.breakfast_eaten.id_for_label }}">{{ form.breakfast_eaten.label }}</label>
-            {{ form.breakfast_eaten }}
-            {% if form.breakfast_eaten.errors %}<div class="errors">{{ form.breakfast_eaten.errors }}</div>{% endif %}
-          </div>
 
-          <div class="field radio">
-            <label for="{{ form.lunch_eaten.id_for_label }}">{{ form.lunch_eaten.label }}</label>
-            {{ form.lunch_eaten }}
-            {% if form.lunch_eaten.errors %}<div class="errors">{{ form.lunch_eaten.errors }}</div>{% endif %}
-          </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.breakfast_eaten.id_for_label }}">{{ form.breakfast_eaten.label }}</label>
         </div>
+        <div class="ask-child">Ask the child- Did you eat Breakfast?</div>
+        {{ form.breakfast_eaten }}
+        {% if form.breakfast_eaten.errors %}<div class="errors">{{ form.breakfast_eaten.errors }}</div>{% endif %}
+      </div>
 
-        <div class="grid">
-          <div class="field radio"><label>{{ form.green_leafy_veg.label }}</label>{{ form.green_leafy_veg }}{% if form.green_leafy_veg.errors %}<div class="errors">{{ form.green_leafy_veg.errors }}</div>{% endif %}</div>
-          <div class="field radio"><label>{{ form.other_vegetables.label }}</label>{{ form.other_vegetables }}{% if form.other_vegetables.errors %}<div class="errors">{{ form.other_vegetables.errors }}</div>{% endif %}</div>
-
-          <div class="field radio"><label>{{ form.fruits.label }}</label>{{ form.fruits }}{% if form.fruits.errors %}<div class="errors">{{ form.fruits.errors }}</div>{% endif %}</div>
-          <div class="field radio"><label>{{ form.dal_pulses_beans.label }}</label>{{ form.dal_pulses_beans }}{% if form.dal_pulses_beans.errors %}<div class="errors">{{ form.dal_pulses_beans.errors }}</div>{% endif %}</div>
-
-          <div class="field radio"><label>{{ form.milk_curd.label }}</label>{{ form.milk_curd }}{% if form.milk_curd.errors %}<div class="errors">{{ form.milk_curd.errors }}</div>{% endif %}</div>
-          <div class="field radio" id="diet-egg-field">
-            <label>{{ form.egg.label }}</label>
-            {{ form.egg }}
-            {% if form.egg.errors %}<div class="errors">{{ form.egg.errors }}</div>{% endif %}
-          </div>
-          
-
-          <div class="field radio" id="diet-meat-field">
-            <label>{{ form.fish_chicken_meat.label }}</label>
-            {{ form.fish_chicken_meat }}
-            {% if form.fish_chicken_meat.errors %}<div class="errors">{{ form.fish_chicken_meat.errors }}</div>{% endif %}
-          </div>
-          
-          <div class="field radio"><label>{{ form.nuts_groundnuts.label }}</label>{{ form.nuts_groundnuts }}{% if form.nuts_groundnuts.errors %}<div class="errors">{{ form.nuts_groundnuts.errors }}</div>{% endif %}</div>
-
-          <div class="field radio"><label>{{ form.ssb_or_packaged_snacks.label }}</label>{{ form.ssb_or_packaged_snacks }}{% if form.ssb_or_packaged_snacks.errors %}<div class="errors">{{ form.ssb_or_packaged_snacks.errors }}</div>{% endif %}</div>
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.lunch_eaten.id_for_label }}">{{ form.lunch_eaten.label }}</label>
         </div>
+        <div class="ask-child">Ask the child- Did you eat Lunch?</div>
+        {{ form.lunch_eaten }}
+        {% if form.lunch_eaten.errors %}<div class="errors">{{ form.lunch_eaten.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.green_leafy_veg.id_for_label }}">{{ form.green_leafy_veg.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you eat green leafy vegetables in your last meal?</div>
+        {{ form.green_leafy_veg }}
+        {% if form.green_leafy_veg.errors %}<div class="errors">{{ form.green_leafy_veg.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.other_vegetables.id_for_label }}">{{ form.other_vegetables.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you eat any other vegetable in your last meal?</div>
+        {{ form.other_vegetables }}
+        {% if form.other_vegetables.errors %}<div class="errors">{{ form.other_vegetables.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.fruits.id_for_label }}">{{ form.fruits.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you eat fruits yesterday?</div>
+        {{ form.fruits }}
+        {% if form.fruits.errors %}<div class="errors">{{ form.fruits.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.dal_pulses_beans.id_for_label }}">{{ form.dal_pulses_beans.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you eat Dal / Pulses / Beans yesterday?</div>
+        {{ form.dal_pulses_beans }}
+        {% if form.dal_pulses_beans.errors %}<div class="errors">{{ form.dal_pulses_beans.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.milk_curd.id_for_label }}">{{ form.milk_curd.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you drink milk or eat curd yesterday?</div>
+        {{ form.milk_curd }}
+        {% if form.milk_curd.errors %}<div class="errors">{{ form.milk_curd.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow" id="diet-egg-field">
+        <div class="qtitle">
+          <label for="{{ form.egg.id_for_label }}">{{ form.egg.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you eat egg yesterday?</div>
+        {{ form.egg }}
+        {% if form.egg.errors %}<div class="errors">{{ form.egg.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow" id="diet-meat-field">
+        <div class="qtitle">
+          <label for="{{ form.fish_chicken_meat.id_for_label }}">{{ form.fish_chicken_meat.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you eat Fish / Chicken / Meat in the the last 3 days?</div>
+        {{ form.fish_chicken_meat }}
+        {% if form.fish_chicken_meat.errors %}<div class="errors">{{ form.fish_chicken_meat.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.nuts_groundnuts.id_for_label }}">{{ form.nuts_groundnuts.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Did you eat Nuts / Groundnuts yesterday?</div>
+        {{ form.nuts_groundnuts }}
+        {% if form.nuts_groundnuts.errors %}<div class="errors">{{ form.nuts_groundnuts.errors }}</div>{% endif %}
+      </div>
+
+      <div class="qrow">
+        <div class="qtitle">
+          <label for="{{ form.ssb_or_packaged_snacks.id_for_label }}">{{ form.ssb_or_packaged_snacks.label }}</label>
+        </div>
+        <div class="ask-child">Ask the child- Do you drink soft drinks like coca cola, pepsi, mirinda, fanta, limca etc.? Do you drink fruit juice that is not made at home? Do you eat snacks like biscuits, chocolates, chips, cakes etc.?</div>
+        {{ form.ssb_or_packaged_snacks }}
+        {% if form.ssb_or_packaged_snacks.errors %}<div class="errors">{{ form.ssb_or_packaged_snacks.errors }}</div>{% endif %}
+      </div>
       </fieldset>
 
-      <!-- SECTION E -->
+<!-- SECTION E -->
       <fieldset>
         <legend>Section E: Program Enablers</legend>
 
@@ -269,19 +549,18 @@
           <div class="field radio">
             <label for="{{ form.deworming_taken.id_for_label }}">{{ form.deworming_taken.label }}</label>
             {{ form.deworming_taken }}
+            <div class="ask-child">Ask the child- Did you take the big pill for deworming?</div>
             {% if form.deworming_taken.errors %}<div class="errors">{{ form.deworming_taken.errors }}</div>{% endif %}
           </div>
           <div class="field" id="deworming-months-field">
-            <div class="field">
-              <label for="{{ form.deworming_date.id_for_label }}">{{ form.deworming_date.label }}</label>
-              {{ form.deworming_date }}
-              {% if form.deworming_date.errors %}<div class="errors">{{ form.deworming_date.errors }}</div>{% endif %}
-            </div>
+            <label for="{{ form.deworming_date.id_for_label }}">{{ form.deworming_date.label }}</label>
+            {{ form.deworming_date }}
+            {% if form.deworming_date.errors %}<div class="errors">{{ form.deworming_date.errors }}</div>{% endif %}
           </div>
         </div>
       </fieldset>
 
-      <!-- SECTION F -->
+<!-- SECTION F -->
       <fieldset>
         <legend>Section F: Food Security</legend>
 
@@ -550,5 +829,43 @@
     </script>
     
   
+
+  <script>
+    (function () {
+      'use strict';
+
+      function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+      function setSelectFromCheckbox(sel) {
+        var checkboxId = sel.getAttribute('data-checkbox-id');
+        if (!checkboxId) return;
+        var cb = document.getElementById(checkboxId);
+        if (!cb) return;
+        sel.value = cb.checked ? 'yes' : 'no';
+      }
+
+      function setCheckboxFromSelect(sel) {
+        var checkboxId = sel.getAttribute('data-checkbox-id');
+        if (!checkboxId) return;
+        var cb = document.getElementById(checkboxId);
+        if (!cb) return;
+
+        cb.checked = (String(sel.value).toLowerCase() === 'yes');
+
+        // Trigger change so existing scripts (e.g. menarche details) react.
+        try { cb.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+      }
+
+      function syncYesNoProxies() {
+        var sels = qsa('select.yn-proxy[data-checkbox-id]');
+        sels.forEach(function (sel) {
+          setSelectFromCheckbox(sel);
+          sel.addEventListener('change', function () { setCheckboxFromSelect(sel); });
+        });
+      }
+
+      syncYesNoProxies();
+    })();
+  </script>
 </body>
 </html>
