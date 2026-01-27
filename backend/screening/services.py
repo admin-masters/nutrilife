@@ -169,7 +169,7 @@ def compute_risk(
 
 
     derived["health_red_flags"] = health_red
-
+    flags.extend(health_red)
     # --- Section F: Food Security ---
     hunger = (answers.get("hunger_vital_sign") or "").upper()
     derived["hunger_vital_sign"] = hunger
