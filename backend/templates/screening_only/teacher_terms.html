@@ -17,10 +17,9 @@
 <body>
   <div class="card">
     <h2>Terms and Conditions</h2>
-    <div class="muted">Select a language to view the Terms. Default is Marathi.</div>
 
     <form method="get">
-      <label for="lang">Language / भाषा</label>
+      <label for="lang">Language</label>
       <select id="lang" name="lang" onchange="this.form.submit()">
         {% for code,label in languages %}
           <option value="{{ code }}" {% if code == lang %}selected{% endif %}>
