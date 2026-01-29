@@ -25,6 +25,7 @@ urlpatterns = [
     path("teacher/auth-required/", views.teacher_auth_required, name="teacher_auth_required"),
     path("teacher/onboarding/", views.teacher_onboarding, name="teacher_onboarding"),
     path("teacher/dashboard/", views.teacher_dashboard, name="teacher_dashboard"),
+    path("teacher/terms/", views.teacher_terms, name="teacher_terms"),
     path("teacher/<slug:token>/", views.teacher_access_portal, name="teacher_access_portal"),
 
     # Parent flow (public, tokenized)

@@ -33,7 +33,7 @@ from .services import (
     unique_screening_token,
     parse_parent_token,
 )
-
+from .teacher_terms_content import DEFAULT_LANG, LANG_OPTIONS, TERMS_BY_LANG
 
 User = get_user_model()
 
@@ -183,10 +183,27 @@ def teacher_access_portal(request: HttpRequest, token: str) -> HttpResponse:
         {
             "org": org,
             "form": form,
-            "terms_url": getattr(settings, "SCREENING_TERMS_URL", "") or "#",
         },
     )
 
+def teacher_terms(request: HttpRequest) -> HttpResponse:
+    """
+    Public Terms & Conditions page for teachers.
+    Default language is Marathi. Language switches via ?lang=<code> (full page refresh).
+    """
+    lang = (request.GET.get("lang") or DEFAULT_LANG).strip().lower()
+    if lang not in TERMS_BY_LANG:
+        lang = DEFAULT_LANG
+
+    return render(
+        request,
+        "screening_only/teacher_terms.html",
+        {
+            "lang": lang,
+            "languages": LANG_OPTIONS,
+            "terms_paragraphs": TERMS_BY_LANG[lang],
+        },
+    )
 
 def teacher_auth_required(request: HttpRequest) -> HttpResponse:
     """
