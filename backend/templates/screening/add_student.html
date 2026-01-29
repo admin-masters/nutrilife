@@ -1,13 +1,34 @@
+{% load static %}
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Add student & complete screening</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <script src="{% static 'screening/screening_i18n.js' %}" defer></script>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 16px; background: #fafafa; color: #111; }
     .container { max-width: 980px; margin: 0 auto; }
+    .langbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0 14px 0;
+    }
+    .langbar .lang-label {
+      font-size: 13px;
+      color: #222;
+      font-weight: 600;
+    }
+    .langbar select {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #e8e8e8;
+      background: #fafafa;
+      font-size: 14px;
+    }
+
     h2 { margin: 0 0 4px 0; }
     .muted { color: #666; font-size: 14px; margin: 4px 0 0 0; }
     form { background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 16px; }
@@ -68,11 +89,24 @@
   </style>
 </head>
 
-<body>
+<body data-page="add_student">
   <div class="container">
-    <h2>Add student & complete screening</h2>
+    <h2 data-i18n="page.add_student.heading">Add student & complete screening</h2>
     
-
+    <div class="langbar">
+      <div class="lang-label" data-i18n="ui.language.label">Language</div>
+      <select id="language-select" aria-label="Language">
+        <option value="en">English</option>
+        <option value="mr" selected>मराठी</option>
+        <option value="hi">हिन्दी</option>
+        <option value="te">తెలుగు</option>
+        <option value="ta">தமிழ்</option>
+        <option value="ml">മലയാളം</option>
+        <option value="kn">ಕನ್ನಡ</option>
+        <option value="bn">বাংলা</option>
+      </select>
+    </div>
+    
     <form method="post" novalidate>
       {% csrf_token %}
 
@@ -85,18 +119,20 @@
 
       <!-- CLASS DETAILS -->
       <fieldset>
-        <legend>Class assignment</legend>
+        <legend data-i18n="legend.class_assignment">Class assignment</legend>
+
         
 
         <div class="grid">
           <div class="field">
-            <label for="{{ student_form.grade.id_for_label }}">{{ student_form.grade.label }}</label>
+            <label for="{{ student_form.grade.id_for_label }}" data-i18n="field.grade.label">{{ student_form.grade.label }}</label>
             {{ student_form.grade }}
             {% if student_form.grade.errors %}<div class="errors">{{ student_form.grade.errors }}</div>{% endif %}
           </div>
 
           <div class="field">
-            <label for="{{ student_form.division.id_for_label }}">{{ student_form.division.label }}</label>
+            <label for="{{ student_form.division.id_for_label }}" data-i18n="field.division.label">{{ student_form.division.label }}</label>
+
             {{ student_form.division }}
             {% if student_form.division.errors %}<div class="errors">{{ student_form.division.errors }}</div>{% endif %}
           </div>
@@ -105,46 +141,54 @@
         <div class="checks" style="margin-top: 10px;">
           <div class="check">
             {{ student_form.is_low_income }}
-            <label for="{{ student_form.is_low_income.id_for_label }}">{{ student_form.is_low_income.label }}</label>
+            <label for="{{ student_form.is_low_income.id_for_label }}" data-i18n="field.is_low_income.label">{{ student_form.is_low_income.label }}</label>
           </div>
         </div>
       </fieldset>
 
       <!-- SECTION A -->
       <fieldset>
-        <legend>Section A: Particulars</legend>
+        <legend data-i18n="legend.section_a">Section A: Particulars</legend>
+
 
         <div class="grid">
           <div class="field">
-            <label for="{{ screening_form.student_name.id_for_label }}">{{ screening_form.student_name.label }}</label>
+            <label for="{{ screening_form.student_name.id_for_label }}" data-i18n="field.student_name.label">{{ screening_form.student_name.label }}</label>
+
             {{ screening_form.student_name }}
             {% if screening_form.student_name.errors %}<div class="errors">{{ screening_form.student_name.errors }}</div>{% endif %}
           </div>
 
           <div class="field">
-            <label for="{{ screening_form.unique_student_id.id_for_label }}">{{ screening_form.unique_student_id.label }}</label>
+            <label for="{{ screening_form.unique_student_id.id_for_label }}" data-i18n="field.unique_student_id.label">{{ screening_form.unique_student_id.label }}</label>
+
             {{ screening_form.unique_student_id }}
             {% if screening_form.unique_student_id.errors %}<div class="errors">{{ screening_form.unique_student_id.errors }}</div>{% endif %}
           </div>
 
           <div class="field">
-            <label for="{{ screening_form.dob.id_for_label }}">{{ screening_form.dob.label }}</label>
+            <label for="{{ screening_form.dob.id_for_label }}" data-i18n="field.dob.label">{{ screening_form.dob.label }}</label>
+
             {{ screening_form.dob }}
             {% if screening_form.dob.errors %}<div class="errors">{{ screening_form.dob.errors }}</div>{% endif %}
             <div id="age-display" class="muted" style="margin-top: 4px;"></div>
           </div>
 
           <div class="field">
-            <label for="{{ screening_form.sex.id_for_label }}">{{ screening_form.sex.label }}</label>
+            <label for="{{ screening_form.sex.id_for_label }}" data-i18n="field.sex.label">{{ screening_form.sex.label }}</label>
+
             {{ screening_form.sex }}
             {% if screening_form.sex.errors %}<div class="errors">{{ screening_form.sex.errors }}</div>{% endif %}
-            <div id="sex-disabled-hint" class="muted" style="display:none; margin-top:4px;">
+            <div id="sex-disabled-hint" class="muted" style="display:none; margin-top:4px;" data-i18n="hint.select_dob_first">
               Select Date of Birth first to enable this field.
             </div>
+
+
           </div>
 
           <div class="field">
-            <label for="{{ screening_form.parent_phone_e164.id_for_label }}">{{ screening_form.parent_phone_e164.label }}</label>
+            <label for="{{ screening_form.parent_phone_e164.id_for_label }}" data-i18n="field.parent_phone_e164.label">{{ screening_form.parent_phone_e164.label }}</label>
+
             {{ screening_form.parent_phone_e164 }}
             {% if screening_form.parent_phone_e164.errors %}<div class="errors">{{ screening_form.parent_phone_e164.errors }}</div>{% endif %}
           </div>
@@ -153,22 +197,26 @@
 
       <!-- SECTION B -->
       <fieldset>
-        <legend>Section B: Anthropometry</legend>
+        <legend data-i18n="legend.section_b">Section B: Anthropometry</legend>
+
 
         <div class="grid">
           <div class="field">
-            <label for="{{ screening_form.weight_kg_r1.id_for_label }}">{{ screening_form.weight_kg_r1.label }}</label>
+            <label for="{{ screening_form.weight_kg_r1.id_for_label }}" data-i18n="field.weight_kg_r1.label">{{ screening_form.weight_kg_r1.label }}</label>
+
             {{ screening_form.weight_kg_r1 }}
             {% if screening_form.weight_kg_r1.errors %}<div class="errors">{{ screening_form.weight_kg_r1.errors }}</div>{% endif %}
           </div>
           <div class="field">
-            <label for="{{ screening_form.height_cm_r1.id_for_label }}">{{ screening_form.height_cm_r1.label }}</label>
+            <label for="{{ screening_form.height_cm_r1.id_for_label }}" data-i18n="field.height_cm_r1.label">{{ screening_form.height_cm_r1.label }}</label>
+
             {{ screening_form.height_cm_r1 }}
             {% if screening_form.height_cm_r1.errors %}<div class="errors">{{ screening_form.height_cm_r1.errors }}</div>{% endif %}
           </div>
 
           <div class="field radio" id="muac-field">
-            <label for="{{ screening_form.muac_tape_color.id_for_label }}">{{ screening_form.muac_tape_color.label }}</label>
+            <label for="{{ screening_form.muac_tape_color.id_for_label }}" data-i18n="field.muac_tape_color.label">{{ screening_form.muac_tape_color.label }}</label>
+
             {{ screening_form.muac_tape_color }}
             {% if screening_form.muac_tape_color.errors %}<div class="errors">{{ screening_form.muac_tape_color.errors }}</div>{% endif %}
           </div>
@@ -180,14 +228,16 @@
 
       <!-- SECTION C -->
       <fieldset>
-        <legend>Section C: Quick Health Red Flags</legend>
+        <legend data-i18n="legend.section_c">Section C: Quick Health Red Flags</legend>
+
 
 
       <div class="qrow">
         <div class="qtitle">
           <label for="{{ screening_form.health_general_poor.id_for_label }}">{{ screening_form.health_general_poor.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Do you feel healthy?</div>
+        <div class="ask-child" data-i18n="ask.health_general_poor">Ask the child- Do you feel healthy?</div>
+
 
         <div style="display:none;">
           {{ screening_form.health_general_poor }}
@@ -205,7 +255,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_pallor.id_for_label }}">{{ screening_form.health_pallor.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Does the child have pallor?</div>
+        <div class="ask-child" data-i18n="ask.health_pallor">Ask the child- Does the child have pallor?</div>
 
         <div style="display:none;">
           {{ screening_form.health_pallor }}
@@ -223,7 +273,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_fatigue_dizzy_faint.id_for_label }}">{{ screening_form.health_fatigue_dizzy_faint.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- If they remember having fainted while doing normal work/play, or if the child feels very too tired to do routine work/play?</div>
+        <div class="ask-child" data-i18n="ask.health_fatigue_dizzy_faint">Ask the child- If they remember having fainted while doing normal work/play, or if the child feels very too tired to do routine work/play?</div>
 
         <div style="display:none;">
           {{ screening_form.health_fatigue_dizzy_faint }}
@@ -241,7 +291,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_breathlessness.id_for_label }}">{{ screening_form.health_breathlessness.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- If they feel breathless on doing routine activities or while walking normally?</div>
+        <div class="ask-child" data-i18n="ask.health_breathlessness">Ask the child- If they feel breathless on doing routine activities or while walking normally?</div>
 
         <div style="display:none;">
           {{ screening_form.health_breathlessness }}
@@ -259,7 +309,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_frequent_infections.id_for_label }}">{{ screening_form.health_frequent_infections.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Does the child fall sick very often? Has been ill 3 times or more in the last month?</div>
+        <div class="ask-child" data-i18n="ask.health_frequent_infectionss">Ask the child- Does the child fall sick very often? Has been ill 3 times or more in the last month?</div>
 
         <div style="display:none;">
           {{ screening_form.health_frequent_infections }}
@@ -277,7 +327,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_chronic_cough_or_diarrhea.id_for_label }}">{{ screening_form.health_chronic_cough_or_diarrhea.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Does the child have cough and has had it for last 4 weeks or more, or does the child have loose motions and it has lasted more than 2 weeks?</div>
+        <div class="ask-child" data-i18n="ask.health_chronic_cough_or_diarrhea">Ask the child- Does the child have cough and has had it for last 4 weeks or more, or does the child have loose motions and it has lasted more than 2 weeks?</div>
 
         <div style="display:none;">
           {{ screening_form.health_chronic_cough_or_diarrhea }}
@@ -295,7 +345,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_visible_worms.id_for_label }}">{{ screening_form.health_visible_worms.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- If they have ever seen small worms in their stool.</div>
+        <div class="ask-child" data-i18n="ask.health_visible_worms">Ask the child- If they have ever seen small worms in their stool.</div>
 
         <div style="display:none;">
           {{ screening_form.health_visible_worms }}
@@ -313,7 +363,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_dental_or_gum_or_ulcers.id_for_label }}">{{ screening_form.health_dental_or_gum_or_ulcers.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- If they have teeth pain, gum bleeding or mouth ulcers?</div>
+        <div class="ask-child" data-i18n="ask.health_dental_or_gum_or_ulcers">Ask the child- If they have teeth pain, gum bleeding or mouth ulcers?</div>
 
         <div style="display:none;">
           {{ screening_form.health_dental_or_gum_or_ulcers }}
@@ -331,7 +381,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_night_vision_difficulty.id_for_label }}">{{ screening_form.health_night_vision_difficulty.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- If they stumble while walking in the dark since they can't see properly</div>
+        <div class="ask-child" data-i18n="ask.health_night_vision_difficulty">Ask the child- If they stumble while walking in the dark since they can't see properly</div>
 
         <div style="display:none;">
           {{ screening_form.health_night_vision_difficulty }}
@@ -349,7 +399,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.health_bone_or_joint_pain.id_for_label }}">{{ screening_form.health_bone_or_joint_pain.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- If they have pain in their arms/legs/joints, although they haven't been hurt and even without hard work/play?</div>
+        <div class="ask-child" data-i18n="ask.health_bone_or_joint_pain">Ask the child- If they have pain in their arms/legs/joints, although they haven't been hurt and even without hard work/play?</div>
 
         <div style="display:none;">
           {{ screening_form.health_bone_or_joint_pain }}
@@ -372,7 +422,8 @@
 
 
       <fieldset id="girls-only-section" style="margin-top: 12px;">
-        <legend>Girls only</legend>
+        <legend data-i18n="legend.girls_only">Girls only</legend>
+
 
         <div class="qrow" style="margin-top: 10px;">
           <div class="qtitle">
@@ -443,7 +494,8 @@
 
 <!-- SECTION D -->
       <fieldset>
-        <legend>Section D: Diet Type & Diversity</legend>
+        <legend data-i18n="legend.section_d">Section D: Diet Type & Diversity</legend>
+
 
 
       <div class="field radio">
@@ -457,13 +509,14 @@
                 <label for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
               </div>
 
-              {% if "Lacto-vegetarian" in radio.choice_label %}
-                <div class="ask-child">Ask the child- Do you drink milk or eat dahi or paneer at home?</div>
-              {% elif "Lacto-ovo-vegetarian" in radio.choice_label %}
-                <div class="ask-child">Ask the child- Do you eat eggs at home?</div>
-              {% elif "Non-vegetarian" in radio.choice_label %}
-                <div class="ask-child">Ask the child- Do you eat fish, chicken or mutton at home?</div>
+              {% if radio.data.value == "LACTO_VEG" %}
+                <div class="ask-child" data-i18n="ask.diet_type.LACTO_VEG">Ask the child- Do you drink milk or eat dahi or paneer at home?</div>
+              {% elif radio.data.value == "LACTO_OVO" %}
+                <div class="ask-child" data-i18n="ask.diet_type.LACTO_OVO">Ask the child- Do you eat eggs at home?</div>
+              {% elif radio.data.value == "NON_VEG" %}
+                <div class="ask-child" data-i18n="ask.diet_type.NON_VEG">Ask the child- Do you eat fish, chicken or mutton at home?</div>
               {% endif %}
+
             </div>
           {% endfor %}
         </div>
@@ -471,16 +524,17 @@
         {% if screening_form.diet_type.errors %}<div class="errors">{{ screening_form.diet_type.errors }}</div>{% endif %}
       </div>
 
-        <p class="section-hint" style="margin-top: 12px; font-weight: 700; color: #111;">
+        <p class="section-hint" style="margin-top: 12px; font-weight: 700; color: #111;" data-i18n="hint.diet_24h">
           Did the student have the following in last 24 hours?
         </p>
+
 
 
       <div class="qrow">
         <div class="qtitle">
           <label for="{{ screening_form.breakfast_eaten.id_for_label }}">{{ screening_form.breakfast_eaten.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat Breakfast?</div>
+        <div class="ask-child" data-i18n="ask.breakfast_eaten">Ask the child- Did you eat Breakfast?</div>
         {{ screening_form.breakfast_eaten }}
         {% if screening_form.breakfast_eaten.errors %}<div class="errors">{{ screening_form.breakfast_eaten.errors }}</div>{% endif %}
       </div>
@@ -489,7 +543,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.lunch_eaten.id_for_label }}">{{ screening_form.lunch_eaten.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat Lunch?</div>
+        <div class="ask-child" data-i18n="ask.lunch_eaten">Ask the child- Did you eat Lunch?</div>
         {{ screening_form.lunch_eaten }}
         {% if screening_form.lunch_eaten.errors %}<div class="errors">{{ screening_form.lunch_eaten.errors }}</div>{% endif %}
       </div>
@@ -498,7 +552,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.green_leafy_veg.id_for_label }}">{{ screening_form.green_leafy_veg.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat green leafy vegetables in your last meal?</div>
+        <div class="ask-child" data-i18n="ask.green_leafy_veg">Ask the child- Did you eat green leafy vegetables in your last meal?</div>
         {{ screening_form.green_leafy_veg }}
         {% if screening_form.green_leafy_veg.errors %}<div class="errors">{{ screening_form.green_leafy_veg.errors }}</div>{% endif %}
       </div>
@@ -507,7 +561,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.other_vegetables.id_for_label }}">{{ screening_form.other_vegetables.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat any other vegetable in your last meal?</div>
+        <div class="ask-child" data-i18n="ask.other_vegetables">Ask the child- Did you eat any other vegetable in your last meal?</div>
         {{ screening_form.other_vegetables }}
         {% if screening_form.other_vegetables.errors %}<div class="errors">{{ screening_form.other_vegetables.errors }}</div>{% endif %}
       </div>
@@ -516,7 +570,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.fruits.id_for_label }}">{{ screening_form.fruits.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat fruits yesterday?</div>
+        <div class="ask-child" data-i18n="ask.fruits">Ask the child- Did you eat fruits yesterday?</div>
         {{ screening_form.fruits }}
         {% if screening_form.fruits.errors %}<div class="errors">{{ screening_form.fruits.errors }}</div>{% endif %}
       </div>
@@ -525,7 +579,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.dal_pulses_beans.id_for_label }}">{{ screening_form.dal_pulses_beans.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat Dal / Pulses / Beans yesterday?</div>
+        <div class="ask-child" data-i18n="ask.dal_pulses_beans">Ask the child- Did you eat Dal / Pulses / Beans yesterday?</div>
         {{ screening_form.dal_pulses_beans }}
         {% if screening_form.dal_pulses_beans.errors %}<div class="errors">{{ screening_form.dal_pulses_beans.errors }}</div>{% endif %}
       </div>
@@ -534,7 +588,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.milk_curd.id_for_label }}">{{ screening_form.milk_curd.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you drink milk or eat curd yesterday?</div>
+        <div class="ask-child" data-i18n="ask.milk_curd">Ask the child- Did you drink milk or eat curd yesterday?</div>
         {{ screening_form.milk_curd }}
         {% if screening_form.milk_curd.errors %}<div class="errors">{{ screening_form.milk_curd.errors }}</div>{% endif %}
       </div>
@@ -543,7 +597,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.egg.id_for_label }}">{{ screening_form.egg.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat egg yesterday?</div>
+        <div class="ask-child" data-i18n="ask.egg">Ask the child- Did you eat egg yesterday?</div>
         {{ screening_form.egg }}
         {% if screening_form.egg.errors %}<div class="errors">{{ screening_form.egg.errors }}</div>{% endif %}
       </div>
@@ -552,7 +606,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.fish_chicken_meat.id_for_label }}">{{ screening_form.fish_chicken_meat.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat Fish / Chicken / Meat in the the last 3 days?</div>
+        <div class="ask-child" data-i18n="ask.fish_chicken_meat">Ask the child- Did you eat Fish / Chicken / Meat in the the last 3 days?</div>
         {{ screening_form.fish_chicken_meat }}
         {% if screening_form.fish_chicken_meat.errors %}<div class="errors">{{ screening_form.fish_chicken_meat.errors }}</div>{% endif %}
       </div>
@@ -561,7 +615,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.nuts_groundnuts.id_for_label }}">{{ screening_form.nuts_groundnuts.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Did you eat Nuts / Groundnuts yesterday?</div>
+        <div class="ask-child" data-i18n="ask.nuts_groundnuts">Ask the child- Did you eat Nuts / Groundnuts yesterday?</div>
         {{ screening_form.nuts_groundnuts }}
         {% if screening_form.nuts_groundnuts.errors %}<div class="errors">{{ screening_form.nuts_groundnuts.errors }}</div>{% endif %}
       </div>
@@ -570,7 +624,7 @@
         <div class="qtitle">
           <label for="{{ screening_form.ssb_or_packaged_snacks.id_for_label }}">{{ screening_form.ssb_or_packaged_snacks.label }}</label>
         </div>
-        <div class="ask-child">Ask the child- Do you drink soft drinks like coca cola, pepsi, mirinda, fanta, limca etc.? Do you drink fruit juice that is not made at home? Do you eat snacks like biscuits, chocolates, chips, cakes etc.?</div>
+        <div class="ask-child" data-i18n="ask.ssb_or_packaged_snacks">Ask the child- Do you drink soft drinks like coca cola, pepsi, mirinda, fanta, limca etc.? Do you drink fruit juice that is not made at home? Do you eat snacks like biscuits, chocolates, chips, cakes etc.?</div>
         {{ screening_form.ssb_or_packaged_snacks }}
         {% if screening_form.ssb_or_packaged_snacks.errors %}<div class="errors">{{ screening_form.ssb_or_packaged_snacks.errors }}</div>{% endif %}
       </div>
@@ -578,12 +632,14 @@
 
 <!-- SECTION E -->
       <fieldset>
-        <legend>Section E: Program Enablers</legend>
+        <legend data-i18n="legend.section_e">Section E: Program Enablers</legend>
+
+
 
         <div class="grid">
           <div class="field radio">
             <label for="{{ screening_form.deworming_taken.id_for_label }}">{{ screening_form.deworming_taken.label }}</label>
-            <div class="ask-child">Ask the child- Did you take the big pill for deworming?</div>
+            <div class="ask-child" data-i18n="ask.deworming_taken">Ask the child- Did you take the big pill for deworming?</div>
             {{ screening_form.deworming_taken }}
             
             {% if screening_form.deworming_taken.errors %}<div class="errors">{{ screening_form.deworming_taken.errors }}</div>{% endif %}
@@ -598,7 +654,8 @@
 
 <!-- SECTION F -->
       <fieldset>
-        <legend>Section F: Food Security</legend>
+        <legend data-i18n="legend.section_f">Section F: Food Security</legend>
+
 
         <div class="field radio">
           <label for="{{ screening_form.hunger_vital_sign.id_for_label }}">{{ screening_form.hunger_vital_sign.label }}</label>
@@ -608,8 +665,9 @@
       </fieldset>
 
       <div class="actions">
-        <button class="primary" type="submit">Create Student & Complete Screening</button>
-        <a class="button" href="{% url 'teacher_portal' %}">Cancel</a>
+        <button class="primary" type="submit" data-i18n="button.create_student_complete_screening">Create Student & Complete Screening</button>
+        <a class="button" href="{% url 'teacher_portal' %}" data-i18n="button.cancel">Cancel</a>
+
       </div>
     </form>
   </div>
@@ -633,7 +691,10 @@
         // Keep the placeholder from Django choices if present; else add one
         var placeholder = document.createElement("option");
         placeholder.value = "";
-        placeholder.text = "Select division";
+        placeholder.text = (window.NUTRILIFT_I18N && window.NUTRILIFT_I18N.t)
+          ? window.NUTRILIFT_I18N.t("placeholder.select_division")
+          : "Select division";
+
         $division.add(placeholder);
 
         divisions.forEach(function (d) {
@@ -690,12 +751,17 @@
       }
     
       function formatAge(months) {
+        if (window.NUTRILIFT_I18N && typeof window.NUTRILIFT_I18N.formatAge === "function") {
+          return window.NUTRILIFT_I18N.formatAge(months);
+        }
+        // fallback
         var y = Math.floor(months / 12);
         var m = months % 12;
         var yLabel = (y === 1) ? 'year' : 'years';
         var mLabel = (m === 1) ? 'month' : 'months';
         return y + ' ' + yLabel + ' ' + m + ' ' + mLabel;
       }
+
     
       // ---------- Generic helpers ----------
       function clearInputs(root) {
