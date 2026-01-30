@@ -1,7 +1,7 @@
 /* backend/screening/static/screening/screening_i18n.js
    Client-side i18n for Screening forms.
    - Only changes displayed strings (labels/questions/options/titles).
-   - Does NOT change field names, values, or handlers.
+   - Does NOT change field names, values, r handlers.
 */
 
 (function () {
