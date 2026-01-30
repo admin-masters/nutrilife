@@ -91,6 +91,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -248,3 +249,5 @@ SCREENING_TRAINING_VIDEO_URL = os.getenv("SCREENING_TRAINING_VIDEO_URL", "")
 SCREENING_ACADEMIC_YEAR_START_MONTH = int(os.getenv("SCREENING_ACADEMIC_YEAR_START_MONTH", "6"))
 
 SCREENING_TERMS_URL = os.getenv("SCREENING_TERMS_URL", "")
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
