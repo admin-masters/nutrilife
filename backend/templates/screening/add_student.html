@@ -1387,7 +1387,9 @@
     
     <form method="post" novalidate>
       {% csrf_token %}
-
+      <input type="hidden" name="form_language" id="form-language-input" value="">
+      <input type="hidden" name="wa_questions_and_answers" id="wa-qa-input" value="">
+    
       {% if student_form.non_field_errors %}
         <div class="nonfield">{{ student_form.non_field_errors }}</div>
       {% endif %}
@@ -2292,5 +2294,207 @@
       syncYesNoProxies();
     })();
   </script>
+
+  <script>
+    (function () {
+      "use strict";
+    
+      // Keep this list in the order you want it to appear in WhatsApp.
+      // These names match the Django form field names.
+      var QA_FIELDS = [
+        "weight_kg_r1",
+        "height_cm_r1",
+        "muac_tape_color",
+    
+        "health_general_poor",
+        "health_pallor",
+        "health_fatigue_dizzy_faint",
+        "health_breathlessness",
+        "health_frequent_infections",
+        "health_chronic_cough_or_diarrhea",
+        "health_visible_worms",
+        "health_dental_or_gum_or_ulcers",
+        "health_night_vision_difficulty",
+        "health_bone_or_joint_pain",
+    
+        "appetite",
+    
+        // Adolescent girls section (will be skipped automatically if hidden/empty)
+        "menarche_started",
+        "menarche_age_years",
+        "pads_per_day",
+        "bleeding_clots",
+        "cycle_length_days",
+    
+        // Diet section
+        "diet_type",
+        "breakfast_eaten",
+        "lunch_eaten",
+        "green_leafy_veg",
+        "other_vegetables",
+        "fruits",
+        "dal_pulses_beans",
+        "milk_curd",
+        "egg",
+        "fish_chicken_meat",
+        "nuts_groundnuts",
+        "ssb_or_packaged_snacks",
+    
+        // Deworming + hunger vital sign
+        "deworming_taken",
+        "deworming_date",
+        "hunger_vital_sign"
+      ];
+    
+      function isVisible(el) {
+        if (!el) return false;
+        // offsetParent = null for display:none; getClientRects catches some edge cases
+        return !!(el.offsetParent || el.getClientRects().length);
+      }
+    
+      function labelTextFor(name) {
+        // Preferred: labels in these templates have data-i18n="field.<name>.label"
+        var lbl = document.querySelector('[data-i18n="field.' + name + '.label"]');
+        if (lbl) return (lbl.textContent || "").trim();
+    
+        // Fallback: label[for=id]
+        var el = document.querySelector('[name="' + name + '"]');
+        if (el && el.id) {
+          lbl = document.querySelector('label[for="' + el.id + '"]');
+          if (lbl) return (lbl.textContent || "").trim();
+        }
+        return name;
+      }
+    
+      function dispatchChange(el) {
+        if (!el) return;
+        var evt;
+        if (typeof Event === "function") {
+          evt = new Event("change", { bubbles: true });
+        } else {
+          evt = document.createEvent("Event");
+          evt.initEvent("change", true, true);
+        }
+        el.dispatchEvent(evt);
+      }
+    
+      function radioAnswer(name) {
+        var checked = document.querySelector('input[name="' + name + '"][type="radio"]:checked');
+        if (!checked) return "";
+        if (!isVisible(checked)) return "";
+    
+        var lbl = checked.closest ? checked.closest("label") : null;
+        if (!lbl && checked.id) lbl = document.querySelector('label[for="' + checked.id + '"]');
+    
+        var txt = lbl ? (lbl.textContent || "") : (checked.value || "");
+        return txt.replace(/\s+/g, " ").trim();
+      }
+    
+      function selectAnswer(sel) {
+        if (!sel || !isVisible(sel)) return "";
+        if (!sel.value) return "";
+        var opt = sel.options[sel.selectedIndex];
+        return opt ? (opt.textContent || "").trim() : "";
+      }
+    
+      function inputAnswer(inp) {
+        if (!inp || !isVisible(inp)) return "";
+        return (inp.value || "").trim();
+      }
+    
+      function checkboxProxyAnswer(cb) {
+        // These templates use proxy selects for many checkboxes (health + some girls fields)
+        var proxy = cb && cb.id ? document.querySelector('select.yn-proxy[data-checkbox-id="' + cb.id + '"]') : null;
+        if (!proxy || !isVisible(proxy)) return "";
+    
+        // If proxy is still on placeholder (value=""), fall back to checkbox state
+        if (!proxy.value) {
+          var optFallback = proxy.querySelector('option[value="' + (cb.checked ? "yes" : "no") + '"]');
+          return optFallback ? (optFallback.textContent || "").trim() : "";
+        }
+    
+        var opt = proxy.options[proxy.selectedIndex];
+        return opt ? (opt.textContent || "").trim() : "";
+      }
+    
+      function answerForField(name) {
+        // 1) Proxy checkbox fields
+        var cb = document.querySelector('input[name="' + name + '"][type="checkbox"]');
+        if (cb) {
+          var proxyTxt = checkboxProxyAnswer(cb);
+          if (proxyTxt) return proxyTxt;
+    
+          // If it’s a real visible checkbox (rare here), return Yes/No in English as fallback
+          // (in practice, your checkbox fields here should have proxies)
+          if (isVisible(cb)) return cb.checked ? "Yes" : "No";
+          return "";
+        }
+    
+        // 2) Radio groups
+        var anyRadio = document.querySelector('input[name="' + name + '"][type="radio"]');
+        if (anyRadio) return radioAnswer(name);
+    
+        // 3) Selects
+        var sel = document.querySelector('select[name="' + name + '"]');
+        if (sel) return selectAnswer(sel);
+    
+        // 4) Inputs/textareas
+        var inp = document.querySelector('input[name="' + name + '"]');
+        if (inp) return inputAnswer(inp);
+    
+        var ta = document.querySelector('textarea[name="' + name + '"]');
+        if (ta) return inputAnswer(ta);
+    
+        return "";
+      }
+    
+      function buildQuestionsAndAnswers() {
+        var lines = [];
+        for (var i = 0; i < QA_FIELDS.length; i++) {
+          var name = QA_FIELDS[i];
+    
+          var answer = answerForField(name);
+          if (!answer) continue;
+    
+          var q = labelTextFor(name);
+          if (!q) continue;
+    
+          lines.push("- " + q + ": " + answer);
+        }
+        return lines.join("\n");
+      }
+    
+      document.addEventListener("DOMContentLoaded", function () {
+        // If the teacher dashboard opens the form with ?lang=xx, honor it.
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var qLang = (params.get("lang") || "").toLowerCase();
+          if (qLang) {
+            var selLang = document.getElementById("language-select");
+            if (selLang && selLang.value !== qLang) {
+              selLang.value = qLang;
+              dispatchChange(selLang); // triggers your existing i18n handler
+            }
+          }
+        } catch (e) {}
+    
+        var formEl = document.querySelector("form");
+        if (!formEl) return;
+    
+        formEl.addEventListener("submit", function () {
+          var sel = document.getElementById("language-select");
+          var lang = (sel && sel.value) ? sel.value :
+                     ((window.localStorage && window.localStorage.getItem("nutrilift_lang")) || "mr");
+    
+          var langInput = document.getElementById("form-language-input");
+          if (langInput) langInput.value = lang;
+    
+          var qaInput = document.getElementById("wa-qa-input");
+          if (qaInput) qaInput.value = buildQuestionsAndAnswers();
+        });
+      });
+    })();
+    </script>
+    
 </body>
 </html>

@@ -68,8 +68,21 @@ def _auto_send_for_screening(request, s):
             is_screening_only = False
 
         if is_screening_only:
+            # in Screening Program, only RED sends parent WhatsApp
+            if s.risk_level != "RED":
+                return None
+                
             from screening_only.services import prepare_screening_only_redflag_click_to_chat
-            log, _text = prepare_screening_only_redflag_click_to_chat(request, s)
+            form_language = (request.POST.get("form_language") or request.GET.get("lang") or "").strip()
+            qa_text = (request.POST.get("wa_questions_and_answers") or "").strip()
+
+            log, _text = prepare_screening_only_redflag_click_to_chat(
+                request,
+                s,
+                form_language=form_language,
+                questions_and_answers=qa_text,
+            )
+
         else:
             log, _text = prepare_screening_status_click_to_chat(s)
 
