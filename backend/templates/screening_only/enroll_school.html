@@ -62,7 +62,13 @@
       {{ form.principal_email }}
       {{ form.principal_email.errors }}
 
-      <label for="{{ form.operator_name.id_for_label }}">Program In-charge/School Coordinator (Person managing Nutrilift in your school)</label>
+      <label for="{{ form.operator_name.id_for_label }}">
+        Program In-charge / School Coordinator
+        <div class="muted" style="font-weight:400;font-size:0.9em;">
+          Person managing Nutrilift in your school
+        </div>
+      </label>
+      
       {{ form.operator_name }}
       {{ form.operator_name.errors }}
 
@@ -70,9 +76,12 @@
       {{ form.operator_email }}
       {{ form.operator_email.errors }}
 
-      <label for="{{ form.local_language_code.id_for_label }}">Local Language Code</label>
-      {{ form.local_language_code }}
-      {{ form.local_language_code.errors }}
+      <div style="display:none;">
+        <label for="{{ form.local_language_code.id_for_label }}">Local Language Code</label>
+        {{ form.local_language_code }}
+        {{ form.local_language_code.errors }}
+      </div>
+      
 
       <label style="display:flex;align-items:center;margin-top:16px;font-weight:400;">
         {{ form.terms_accepted }}
