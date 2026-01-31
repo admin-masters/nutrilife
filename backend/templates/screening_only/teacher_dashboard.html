@@ -272,20 +272,30 @@
           <th>Class</th>
           <th>Last Screened</th>
           <th>Status</th>
-          <th></th>
         </tr>
       </thead>
-
+    
       <tbody>
-
+    
         {% for s in students %}
           <tr>
-
-            <!-- Name -->
+    
+            <!-- Clickable Name -->
             <td>
-              {{ s.full_name }}
+              <a href="{{ s.screening_url }}"
+                 style="
+                   color:#111;
+                   text-decoration:none;
+                   font-weight:500;
+                 "
+                 onmouseover="this.style.textDecoration='underline'"
+                 onmouseout="this.style.textDecoration='none'">
+    
+                {{ s.full_name }}
+    
+              </a>
             </td>
-
+    
             <!-- Class -->
             <td>
               {% if s.classroom %}
@@ -294,52 +304,41 @@
                 —
               {% endif %}
             </td>
-
+    
             <!-- Last screened -->
             <td>
               {% if s.last_screened_at %}
-                {{ s.last_screened_at|date:"Y-m-d" }}
+                {{ s.last_screened_at|date:'Y-m-d' }}
               {% else %}
                 —
               {% endif %}
             </td>
-
+    
             <!-- Status -->
             <td>
               {% if s.last_risk == "RED" %}
                 <span class="badge red">Needs Attention</span>
-
+    
               {% elif s.last_risk %}
                 <span class="badge green">Normal</span>
-
+    
               {% else %}
                 <span class="badge gray">Not Screened</span>
               {% endif %}
             </td>
-
-            <!-- Action -->
-            <td>
-              <a class="table-btn" href="{{ s.screening_url }}">
-                Fill Screening Form
-              </a>
-            </td>
-
+    
           </tr>
+    
         {% empty %}
           <tr>
-            <td colspan="5">No students found.</td>
+            <td colspan="4">No students found.</td>
           </tr>
         {% endfor %}
-
+    
       </tbody>
     </table>
+    
 
-  </div>
-
-
-  <!-- Footer Note -->
-  <div class="note">
-    Language selector is available on the main screen. Add here only if required.
   </div>
 
 </body>
