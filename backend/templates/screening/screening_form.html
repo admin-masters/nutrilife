@@ -390,6 +390,10 @@
       "ui.language.label": "भाषा"
     },
     "te": {
+      "field.menarche_age_years.label": "మొదటి రజస్వల ప్రారంభమైన వయసు (సంవత్సరాలలో)",
+  "ask.menarche_started": "మీకు రజస్వల ప్రారంభమైందా?",
+  "ask.menarche_age_years": "ఎన్ని ఏళ్ల వయసులో ప్రారంభమైంది?",
+      "field.menarche_started.label": "రజస్వల ప్రారంభమైందా?",
       "field.grade.label": "తరగతి",
   "field.division.label": "విభాగం",
   "field.is_low_income.label": "తక్కువ ఆదాయ కుటుంబం",
@@ -509,6 +513,11 @@
 },
 
 "ta": {
+  "field.menarche_age_years.label": "முதல் மாதவிடாய் தொடங்கிய வயது (ஆண்டுகளில்)",
+  "ask.menarche_started": "உங்களுக்கு மாதவிடாய் தொடங்கியுள்ளதா?",
+  "ask.menarche_age_years": "எந்த வயதில் தொடங்கியது?",
+  "field.menarche_started.label": "மாதவிடாய் தொடங்கியுள்ளதா?",
+  "placeholder.select_age": "வயதை தேர்ந்தெடுக்கவும்",
   "field.grade.label": "வகுப்பு",
   "field.division.label": "பிரிவு",
   "field.is_low_income.label": "குறைந்த வருமான குடும்பம்",
@@ -620,6 +629,10 @@
 },
 
     "ml": {
+      "field.menarche_age_years.label": "ആദ്യ മാസവിരാമം ആരംഭിച്ച പ്രായം (വർഷങ്ങളിൽ)",
+  "ask.menarche_started": "നിങ്ങൾക്ക് മാസവിരാമം ആരംഭിച്ചിട്ടുണ്ടോ?",
+  "ask.menarche_age_years": "എത്ര വയസ്സിലാണ് തുടങ്ങിയത്?",
+      "field.menarche_started.label": "മാസവിരാമം ആരംഭിച്ചിട്ടുണ്ടോ?",
       "field.grade.label": "ക്ലാസ്",
   "field.division.label": "വിഭാഗം",
   "field.is_low_income.label": "കുറഞ്ഞ വരുമാന കുടുംബം",
@@ -741,6 +754,10 @@
 },
     
     "kn": {
+      "field.menarche_age_years.label": "ಮೊದಲ ಮಾಸಿಕ ಪ್ರಾರಂಭವಾದ ವಯಸ್ಸು (ವರ್ಷಗಳಲ್ಲಿ)",
+  "ask.menarche_started": "ನಿಮಗೆ ಮಾಸಿಕ ಪ್ರಾರಂಭವಾಗಿದೆಯೇ?",
+  "ask.menarche_age_years": "ಯಾವ ವಯಸ್ಸಿನಲ್ಲಿ ಪ್ರಾರಂಭವಾಯಿತು?",
+      "field.menarche_started.label": "ಮಾಸಿಕ ಪ್ರಾರಂಭವಾಗಿದೆಯೇ?",
       "field.grade.label": "ತರಗತಿ",
   "field.division.label": "ವಿಭಾಗ",
   "field.is_low_income.label": "ಕಡಿಮೆ ಆದಾಯದ ಕುಟುಂಬ",
@@ -1092,6 +1109,7 @@
   function translateYesNoProxy(lang) {
     document.querySelectorAll("select.yn-proxy").forEach((sel) => {
       Array.from(sel.options).forEach((opt) => {
+        if (opt.value === "") opt.textContent = t("placeholder.select", lang);
         if (opt.value === "yes") opt.textContent = t("option.yes", lang);
         if (opt.value === "no") opt.textContent = t("option.no", lang);
       });
@@ -1176,7 +1194,12 @@
     }, lang);
 
     translateSelect("division", { __empty__: t("placeholder.select_division", lang) }, lang);
-
+    translateSelect("menarche_age_years", {
+      __empty__: t("placeholder.select_age", lang)
+    }, lang);
+    translateSelect("pads_per_day", {
+      __empty__: t("placeholder.select", lang)
+    }, lang);
     translateRadio("muac_tape_color", {
       RED: t("option.muac_tape_color.RED", lang),
       YELLOW: t("option.muac_tape_color.YELLOW", lang),
@@ -1692,6 +1715,7 @@
             </div>
 
             <select class="yn-proxy" data-checkbox-id="{{ form.bleeding_clots.id_for_label }}">
+              <option value="">Select</option>
               <option value="no">No</option>
               <option value="yes">Yes</option>
             </select>
@@ -1854,7 +1878,7 @@
             {% if form.deworming_taken.errors %}<div class="errors">{{ form.deworming_taken.errors }}</div>{% endif %}
           </div>
           <div class="field" id="deworming-months-field">
-            <label for="{{ form.deworming_date.id_for_label }}">{{ form.deworming_date.label }}</label>
+            <label for="{{ form.deworming_date.id_for_label }}" data-i18n="field.deworming_date.label">{{ form.deworming_date.label }}</label>
             {{ form.deworming_date }}
             {% if form.deworming_date.errors %}<div class="errors">{{ form.deworming_date.errors }}</div>{% endif %}
           </div>
