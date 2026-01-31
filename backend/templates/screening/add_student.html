@@ -1161,12 +1161,9 @@
     }
     translateSelect("deworming_date", map, lang);
   }
-  translateSelect("menarche_age_years", {
-    __empty__: t("placeholder.select_age", lang)
-  }, lang);
-  translateSelect("pads_per_day", {
-    __empty__: t("placeholder.select", lang)
-  }, lang);
+
+  
+
   function apply(lang) {
     document.documentElement.lang = lang;
 
@@ -1234,7 +1231,13 @@
     translateBoolSelects(lang);
     translateCycleLength(lang);
     translateDewormingMonths(lang);
-
+    translateSelect("menarche_age_years", {
+      __empty__: t("placeholder.select_age", lang)
+    }, lang);
+  
+    translateSelect("pads_per_day", {
+      __empty__: t("placeholder.select", lang)
+    }, lang);
     // retrigger DOB change to reformat age string if page script listens to it
     const dob = document.querySelector('input[name="dob"]');
     if (dob) dob.dispatchEvent(new Event("change", { bubbles: true }));
