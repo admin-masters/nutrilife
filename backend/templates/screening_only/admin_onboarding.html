@@ -3,122 +3,202 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Before You Start Screening</title>
+  <title>Pre-screening Onboarding</title>
 
   <style>
-    body{
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background:#f7f7f7;
-      margin:0;
-      padding:24px 12px;
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fafafa;
+      margin: 0;
+      padding: 24px 12px;
+      display: flex;
+      justify-content: center;
+    }
+  
+    .container {
+      width: 100%;
+      max-width: 480px;
+    }
+  
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+  
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+  
+    /* STEP CARD */
+  
+    .step-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+  
+      display: flex;
+      gap: 12px;
+      align-items: flex-start; /* Important */
+    }
+  
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background: #000;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  
+    .step-content {
+      flex: 1;
+    }
+  
+    .step-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+  
+    .step-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+  
+    /* BUTTON */
+  
+    .step-btn {
+      display: block;
+    
+      width: 100%;
+      max-width: 420px;   /* Bigger on desktop */
+    
+      margin: 0 auto;
+    
+      padding: 10px 14px;
+      border: 1px solid #000;
+      border-radius: 8px;
+      background: #fff;
+      color: #000;
+    
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+    
+      transition: 0.15s ease;
+    }
+    
+  
+    .step-btn:hover {
+      background: #000;
+      color: #fff;
+    }
+  
+    /* START BUTTON */
+  
+    .start-btn {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px;
+  
+      background: #000;
+      color: #fff;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+  
+      border: none;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+  
+    .start-btn:hover {
+      opacity: 0.9;
     }
 
-    .container{
-      max-width:420px;
-      margin:0 auto;
-      background:#fff;
-      border-radius:16px;
-      padding:24px 20px 28px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.05);
-    }
+    /* ---------- MOBILE RESPONSIVE ---------- */
 
-    h1{
-      text-align:center;
-      font-size:22px;
-      margin-bottom:6px;
-    }
+@media (max-width: 600px) {
 
-    .subtitle{
-      text-align:center;
-      color:#666;
-      font-size:14px;
-      margin-bottom:24px;
-    }
+  body {
+    padding: 16px 10px;
+  }
 
-    .step-card{
-      border:1px solid #e5e5e5;
-      border-radius:14px;
-      padding:16px;
-      margin-bottom:16px;
-    }
+  h1 {
+    font-size: 20px;
+  }
 
-    .step-header{
-      display:flex;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:12px;
-    }
+  .subtitle {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
 
-    .step-number{
-      width:26px;
-      height:26px;
-      border-radius:50%;
-      background:#000;
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:14px;
-      font-weight:600;
-      flex-shrink:0;
-    }
+  .step-card {
+    padding: 14px;
+    gap: 10px;
+  }
 
-    .step-title{
-      font-size:15px;
-      font-weight:600;
-      margin:0;
-    }
+  .step-number {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
 
-    .step-desc{
-      font-size:13px;
-      color:#666;
-      margin-top:2px;
-    }
+  .step-title {
+    font-size: 14px;
+  }
 
-    .step-btn{
-      display:block;
-      width:100%;
-      text-align:center;
-      padding:10px 12px;
-      border:1.5px solid #000;
-      border-radius:10px;
-      background:#fff;
-      color:#000;
-      text-decoration:none;
-      font-size:14px;
-      font-weight:500;
-      transition:0.2s;
-    }
+  .step-desc {
+    font-size: 12.5px;
+  }
 
-    .step-btn:hover{
-      background:#f2f2f2;
-    }
+  .step-btn {
+    max-width: 100%;     /* Full width on mobile */
+    font-size: 13.5px;
+    padding: 9px 10px;
+  }
 
-    .main-btn{
-      display:block;
-      width:100%;
-      margin-top:20px;
-      padding:12px 14px;
-      background:#000;
-      color:#fff;
-      text-align:center;
-      text-decoration:none;
-      border-radius:12px;
-      font-size:15px;
-      font-weight:600;
-      transition:0.2s;
-    }
+  .start-btn {
+    font-size: 14px;
+    padding: 13px;
+    border-radius: 9px;
+  }
 
-    .main-btn:hover{
-      background:#222;
-    }
+  .container {
+    max-width: 100%;
+  }
+}
+
   </style>
+  
 </head>
 
 <body>
 
   <div class="container">
 
+    <!-- Heading -->
     <h1>Before You Start Screening</h1>
     <p class="subtitle">
       This will help you understand how to screen students.
@@ -128,22 +208,23 @@
     <!-- Step 1 -->
     <div class="step-card">
 
-      <div class="step-header">
-        <div class="step-number">1</div>
+      <div class="step-number">1</div>
 
-        <div>
-          <p class="step-title">Watch the training video</p>
-          <p class="step-desc">
-            Explains how to screen students step by step.
-          </p>
+      <div class="step-content">
+
+        <div class="step-title">
+          Watch the training video
         </div>
-      </div>
 
-      <a href="{{ training_url }}"
-         target="_blank"
-         class="step-btn">
-        Watch Training Video
-      </a>
+        <div class="step-desc">
+          Explains how to screen students step by step.
+        </div>
+
+        <a href="{{ training_url }}" target="_blank" class="step-btn">
+          Watch Training Video
+        </a>
+
+      </div>
 
     </div>
 
@@ -151,30 +232,32 @@
     <!-- Step 2 -->
     <div class="step-card">
 
-      <div class="step-header">
-        <div class="step-number">2</div>
+      <div class="step-number">2</div>
 
-        <div>
-          <p class="step-title">Download the screening guide</p>
-          <p class="step-desc">
-            You can refer to this anytime if needed.
-          </p>
+      <div class="step-content">
+
+        <div class="step-title">
+          Download the screening guide
         </div>
-      </div>
 
-      <a href="{{ guide_url }}"
-         target="_blank"
-         class="step-btn">
-        Download Screening Guide (PDF)
-      </a>
+        <div class="step-desc">
+          You can refer to this anytime if needed.
+        </div>
+
+        <a href="{{ guide_url }}" target="_blank" class="step-btn">
+          Download Screening Guide (PDF)
+        </a>
+
+      </div>
 
     </div>
 
 
     <!-- Continue Button -->
-    <a href="{{ continue_url }}" class="main-btn">
+    <a href="{{ continue_url }}" class="start-btn">
       Start Student Screening
     </a>
+
 
   </div>
 
