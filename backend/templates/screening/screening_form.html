@@ -1056,8 +1056,10 @@
   };
 
   function safeGetLang() {
-    return "mr"; // Always Marathi
+    var sel = document.getElementById("language-select");
+    return sel && sel.value ? sel.value : "en";
   }
+  
 
   function safeSetLang(lang) {
     // Disabled: do not save language
