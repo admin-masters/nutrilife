@@ -26,68 +26,35 @@
     /* ================= MOBILE RESPONSIVE ================= */
 @media (max-width: 700px) {
 
+  /* Prevent overflow */
+  * {
+    box-sizing: border-box;
+  }
+
   body {
     padding: 12px 8px;
-    max-width: 100%;
     overflow-x: hidden;
   }
 
-  /* Cards */
   .card {
     width: 100%;
     max-width: 100%;
     padding: 12px;
-    border-radius: 10px;
+    overflow: hidden;   /* Lock content inside */
   }
 
-  /* Headings */
-  h2 {
-    font-size: 18px;
-    line-height: 1.3;
-  }
-
-  .sub-heading {
-    font-size: 13px;
-    margin-bottom: 10px;
-  }
-
-  /* Form */
-  form {
-    width: 100%;
-  }
-
-  select {
-    width: 100%;
-    margin-top: 6px;
-    padding: 9px;
-    font-size: 13px;
-  }
-
-  label {
-    font-size: 13px;
-  }
-
-  /* Buttons */
-  a.btn {
-    width: 100%;
-    display: block;
-    text-align: center;
-    padding: 11px;
-    font-size: 13.5px;
-    border-radius: 8px;
-  }
-
-  /* Table Wrapper */
-  .card table {
-    display: block;
+  /* Table Scroll Container */
+  .table-wrap {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Table */
   table {
-    min-width: 480px;   /* Less scrolling */
-    border-spacing: 0;
+    width: 100%;
+    min-width: 520px;   /* Force internal scroll */
+    border-collapse: collapse;
   }
 
   th,
@@ -95,9 +62,11 @@
     padding: 6px 6px;
     font-size: 12px;
     line-height: 1.3;
-    white-space: normal;      /* Allow wrapping */
-    word-break: break-word;
     text-align: center;
+
+    /* Allow text to wrap */
+    white-space: normal;
+    word-break: break-word;
   }
 
   th {
@@ -105,21 +74,15 @@
     font-weight: 600;
   }
 
-  /* First two columns slightly wider */
-  td:first-child,
-  th:first-child,
-  td:nth-child(2),
-  th:nth-child(2) {
-    min-width: 60px;
-  }
-
-  /* Number columns */
+  /* Reduce wide columns */
+  th:nth-child(3),
+  th:nth-child(4),
+  th:nth-child(5),
   td:nth-child(3),
   td:nth-child(4),
   td:nth-child(5) {
-    min-width: 70px;
+    min-width: 80px;
   }
-
 
 }
 
@@ -143,6 +106,7 @@
   </div>
 
   <div class="card">
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -167,6 +131,7 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
   </div>
 </body>
 </html>
