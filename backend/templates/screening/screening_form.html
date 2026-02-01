@@ -2368,25 +2368,14 @@
     
       document.addEventListener("DOMContentLoaded", function () {
         // If the teacher dashboard opens the form with ?lang=xx, honor it.
-        try {
-          var params = new URLSearchParams(window.location.search);
-          var qLang = (params.get("lang") || "").toLowerCase();
-          if (qLang) {
-            var selLang = document.getElementById("language-select");
-            if (selLang && selLang.value !== qLang) {
-              selLang.value = qLang;
-              dispatchChange(selLang); // triggers your existing i18n handler
-            }
-          }
-        } catch (e) {}
+        //disabled
     
         var formEl = document.querySelector("form");
         if (!formEl) return;
     
         formEl.addEventListener("submit", function () {
           var sel = document.getElementById("language-select");
-          var lang = (sel && sel.value) ? sel.value :
-                     ((window.localStorage && window.localStorage.getItem("nutrilift_lang")) || "mr");
+          var lang = "mr";
     
           var langInput = document.getElementById("form-language-input");
           if (langInput) langInput.value = lang;
