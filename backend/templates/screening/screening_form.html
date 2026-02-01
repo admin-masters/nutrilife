@@ -38,7 +38,7 @@
       "field.deworming_date.label": "How many months ago?",
       "placeholder.select": "Select",
       "placeholder.select_grade": "Select Class",
-      "placeholder.select_division": "Select division",
+      "placeholder.select_division": "Select section",
       "placeholder.select_sex": "Select sex",
       "placeholder.select_age": "Select age",
       "placeholder.select_months": "Select months",
@@ -1056,18 +1056,11 @@
   };
 
   function safeGetLang() {
-    try {
-      const v = localStorage.getItem(STORAGE_KEY);
-      if (SUPPORTED.includes(v)) return v;
-    } catch (e) {}
-    return DEFAULT_LANG;
+    return "mr"; // Always Marathi
   }
 
   function safeSetLang(lang) {
-    if (!SUPPORTED.includes(lang)) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, lang);
-    } catch (e) {}
+    // Disabled: do not save language
   }
 
   function t(key, langOverride) {
