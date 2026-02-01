@@ -2,7 +2,7 @@
 
 Goal:
   When a new SCHOOL organization is created, automatically seed default
-  Classroom rows (grades Nursery..12 + Other; sections A..Z + Other) so that
+  Classroom rows (grades Nursery, K.G., 1..12 + Other; sections A..Z + Other) so that
   teachers can immediately select grade/division in the "Add student" flow.
 """
 

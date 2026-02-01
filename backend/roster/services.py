@@ -14,7 +14,7 @@ from .models import Classroom
 
 
 def _grades_nursery_to_12() -> list[str]:
-    return ["Nursery"] + [str(i) for i in range(1, 13)]
+    return ["Nursery", "K.G."] + [str(i) for i in range(1, 13)]
 
 
 def _sections_a_to_z() -> list[str]:
@@ -26,7 +26,7 @@ def ensure_default_classrooms_for_school(org: Organization) -> int:
     """Ensure default classroom (grade/division) rows exist for a SCHOOL org.
 
     Creates:
-      - Grades: Nursery, 1..12, Other
+      - Grades: Nursery, K.G., 1..12, Other
       - Sections: A..Z, Other (for each grade)
       - For the "Other" grade, we only create section "Other" to avoid
         meaningless combinations like "Other-A".

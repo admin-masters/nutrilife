@@ -80,7 +80,7 @@ def available_academic_years(org: Organization, years_back: int = 5) -> List[str
 
 
 def _grade_rank_map() -> Dict[str, int]:
-    # DEFAULT_GRADES includes Nursery, LKG, UKG, 1..12, Other
+    #DEFAULT_GRADES includes Nursery, K.G., 1..12
     ranks = {}
     for idx, g in enumerate(DEFAULT_GRADES):
         ranks[str(g)] = idx
