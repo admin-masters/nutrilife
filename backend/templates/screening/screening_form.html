@@ -1474,6 +1474,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_general_poor.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1492,6 +1493,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_pallor.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1510,6 +1512,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_fatigue_dizzy_faint.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1528,6 +1531,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_breathlessness.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1546,6 +1550,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_frequent_infections.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1564,6 +1569,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_chronic_cough_or_diarrhea.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1582,6 +1588,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_visible_worms.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1600,6 +1607,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_dental_or_gum_or_ulcers.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1618,6 +1626,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_night_vision_difficulty.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -1636,6 +1645,7 @@
         </div>
 
         <select class="yn-proxy" data-checkbox-id="{{ form.health_bone_or_joint_pain.id_for_label }}">
+          <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
         </select>
@@ -2170,7 +2180,15 @@
         if (!checkboxId) return;
         var cb = document.getElementById(checkboxId);
         if (!cb) return;
-        sel.value = cb.checked ? 'yes' : 'no';
+        // Only sync if checkbox is checked
+        if (cb.checked) {
+          sel.value = 'yes';
+        } else if (sel.value === '') {
+          // keep placeholder if nothing chosen
+          return;
+        } else {
+          sel.value = 'no';
+        }
       }
 
       function setCheckboxFromSelect(sel) {
@@ -2374,6 +2392,23 @@
         if (!formEl) return;
     
         formEl.addEventListener("submit", function () {
+          // Validate Section C yes/no selects
+          var invalid = false;
+
+          document.querySelectorAll('.qrow select.yn-proxy').forEach(function(sel){
+            if (sel.hasAttribute('required') && !sel.value) {
+              invalid = true;
+              sel.style.borderColor = '#b00020';
+            } else {
+              sel.style.borderColor = '';
+            }
+          });
+
+          if (invalid) {
+            e.preventDefault();
+            alert("Please answer all health questions in Section C.");
+            return;
+          }
           var sel = document.getElementById("language-select");
           var lang = "mr";
     
