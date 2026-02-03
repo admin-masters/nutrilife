@@ -194,7 +194,7 @@ def teacher_terms(request: HttpRequest) -> HttpResponse:
     lang = (request.GET.get("lang") or DEFAULT_LANG).strip().lower()
     if lang not in TERMS_BY_LANG:
         lang = DEFAULT_LANG
-
+    return_token = request.GET.get("return_token", "").strip()
     return render(
         request,
         "screening_only/teacher_terms.html",
@@ -202,6 +202,7 @@ def teacher_terms(request: HttpRequest) -> HttpResponse:
             "lang": lang,
             "languages": LANG_OPTIONS,
             "terms_paragraphs": TERMS_BY_LANG[lang],
+            "return_token": return_token,
         },
     )
 

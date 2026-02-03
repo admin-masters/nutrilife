@@ -16,9 +16,15 @@
 </head>
 <body>
   <div class="card">
+    {% if return_token %}
+    <p style="margin:0 0 12px 0;">
+      <a href="{% url 'screening_only:teacher_access_portal' return_token %}" style="color:#4285f4;text-decoration:underline;">← Back to Teacher Portal</a>
+    </p>
+    {% endif %}
     <h2>Terms and Conditions</h2>
-
+    
     <form method="get">
+      {% if return_token %}<input type="hidden" name="return_token" value="{{ return_token }}"/>{% endif %}
       <label for="lang">Language</label>
       <select id="lang" name="lang" onchange="this.form.submit()">
         {% for code,label in languages %}
