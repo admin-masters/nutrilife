@@ -178,7 +178,7 @@
     </a>
 
     <div class="helper-text">
-      To update screening for a student, click on the student’s name.
+      To update screening for a student, click on the roll number.
     </div>
   </div>
 
@@ -193,7 +193,7 @@
     <table>
       <thead>
         <tr>
-          <th>Student Name</th>
+          <th>Roll Number</th>
           <th>Class</th>
           <th>Last Screened</th>
           <th>Status</th>
@@ -216,7 +216,7 @@
                  onmouseover="this.style.textDecoration='underline'"
                  onmouseout="this.style.textDecoration='none'">
     
-                {{ s.full_name }}
+                 {{ s.student_code|default:"—" }}
     
               </a>
             </td>
