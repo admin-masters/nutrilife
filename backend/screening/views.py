@@ -25,6 +25,8 @@ from assist.models import Application
 import logging
 logger = logging.getLogger(__name__)
 
+from roster.pid import compute_pid
+
 def teacher_portal_token(request, token: str):
     try:
             org.screening_only_profile
@@ -108,19 +110,21 @@ def teacher_portal(request):
     q = (request.GET.get("q") or "").strip()
 
     last_screening = (
-    Screening.objects
-        .filter(student=OuterRef("pk"))
-        .order_by("-screened_at")
-        .values("risk_level")[:1]
+        Screening.objects
+            .filter(organization=org, pid=OuterRef("pid"))
+            .order_by("-screened_at")
+            .values("risk_level")[:1]
     )
+
     approved_application = (
         Application.objects
         .filter(
             organization=org,
-            student=OuterRef("pk"),
+            pid=OuterRef("pid"),
             status=Application.Status.APPROVED,
         )
     )
+
     students = (
         Student.objects
         .filter(organization=org)
@@ -135,7 +139,7 @@ def teacher_portal(request):
     if risk in {"GREEN", "YELLOW", "RED"}:
         students = students.filter(last_risk=risk)
     if q:
-        students = students.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(student_code__icontains=q))
+        students = students.order_by("classroom__grade", "classroom__division", "student_code", "pid")
 
     students = students.order_by("last_name", "first_name")
     classrooms = Classroom.objects.filter(organization=org).order_by("grade", "division")
@@ -150,7 +154,12 @@ def teacher_portal(request):
     })
 
 def _warn_if_large_change(student: Student, height_cm: float, weight_kg: float, now_dt):
-    prev = Screening.objects.filter(student=student, screened_at__gte=now_dt - timedelta(days=183)).order_by("-screened_at").first()
+    prev = Screening.objects.filter(
+        organization=student.organization,
+        pid=student.pid,
+        screened_at__gte=now_dt - timedelta(days=183),
+    ).order_by("-screened_at").first()
+
     if not prev:
         return []
     warnings = []
@@ -183,11 +192,35 @@ def screening_create(request, student_id: int):
             student.save(update_fields=["student_code", "dob", "gender", "updated_at"])
 
             # Guardian (mandatory)
-            phone = form.cleaned_data["parent_phone_e164"]
-            guardian, _ = Guardian.objects.get_or_create(
-                organization=org, phone_e164=phone,
-                defaults={"full_name": "Parent", "whatsapp_opt_in": True}
-            )
+            pid = student.pid
+
+            # Legacy fallback: if an old student exists without pid, try to compute it once.
+            if not pid:
+                try:
+                    pid = compute_pid(
+                        first_name=(student.first_name or ""),
+                        phone_e164=form.cleaned_data["parent_phone_e164"],
+                    )
+                    student.pid = pid
+                    student.save(update_fields=["pid", "updated_at"])
+                except Exception:
+                    pid = None
+
+            guardian = None
+            if pid:
+                guardian, _ = Guardian.objects.get_or_create(
+                    organization=org,
+                    pid=pid,
+                    defaults={
+                        "full_name": None,
+                        "phone_e164": None,
+                        "whatsapp_opt_in": True,
+                    },
+                )
+                if student.primary_guardian_id != guardian.id:
+                    student.primary_guardian = guardian
+                    student.save(update_fields=["primary_guardian", "updated_at"])
+
             if student.primary_guardian_id != guardian.id:
                 student.primary_guardian = guardian
                 student.save(update_fields=["primary_guardian", "updated_at"])
@@ -202,6 +235,7 @@ def screening_create(request, student_id: int):
             s = Screening(
                 organization=org,
                 student=student,
+                pid=pid,  # NEW
                 teacher=_teacher_fk(request),
                 screened_at=now_dt,
                 gender=student.gender,
@@ -316,34 +350,106 @@ def teacher_add_student(request, token=None):
                     if not classroom:
                         raise ValidationError("Selected Grade/Division does not exist.")
 
-                    phone = screening_form.cleaned_data["parent_phone_e164"]
-                    guardian, _ = Guardian.objects.get_or_create(
-                        organization=org, phone_e164=phone,
-                        defaults={"full_name": "Parent", "whatsapp_opt_in": True}
+                    # --- Compute PID from transient form inputs (DO NOT STORE these values) ---
+                    # Support both naming conventions:
+                    #   - your prompt: first_name, phone_e164
+                    #   - current codebase: student_name, parent_phone_e164
+                    raw_first_name = (request.POST.get("first_name") or request.POST.get("student_name") or "").strip()
+
+                    # phone comes from cleaned_data so it is normalized to E.164
+                    phone_e164 = (
+                        screening_form.cleaned_data.get("phone_e164")
+                        or screening_form.cleaned_data.get("parent_phone_e164")
                     )
 
-                    answers = screening_form.cleaned_data["answers"]
+                    pid = compute_pid(first_name=raw_first_name, phone_e164=phone_e164)
+
+                    answers = screening_form.cleaned_data["answers"]     # already PII-free after Step 4
                     derived = screening_form.cleaned_data["_derived"]
 
-                    student = Student.objects.create(
-                        organization=org,
-                        classroom=classroom,
-                        first_name=(answers.get("student_name") or "").strip(),
-                        last_name="",
-                        gender=answers.get("sex"),
-                        dob=screening_form.cleaned_data.get("dob"),
-                        is_low_income=student_form.cleaned_data.get("is_low_income", False),
-                        student_code=answers.get("unique_student_id"),
-                        primary_guardian=guardian,
-                    )
+                    # --- Upsert Student by PID (within this organization) ---
+                    student = Student.objects.filter(organization=org, pid=pid).first()
 
+                    if student is None:
+                        # Create placeholder guardian row keyed by PID (no name, no phone stored)
+                        guardian, _ = Guardian.objects.get_or_create(
+                            organization=org,
+                            pid=pid,
+                            defaults={
+                                "full_name": None,
+                                "phone_e164": None,
+                                "whatsapp_opt_in": True,
+                            },
+                        )
+
+                        # Create placeholder student row keyed by PID (no name stored)
+                        student = Student.objects.create(
+                            organization=org,
+                            classroom=classroom,
+                            pid=pid,
+                            first_name=None,
+                            last_name=None,
+                            gender=answers.get("sex"),
+                            dob=screening_form.cleaned_data.get("dob"),
+                            is_low_income=student_form.cleaned_data.get("is_low_income", False),
+                            student_code=answers.get("unique_student_id"),
+                            primary_guardian=guardian,
+                        )
+                    else:
+                        # Ensure guardian row exists (PID-keyed)
+                        guardian, _ = Guardian.objects.get_or_create(
+                            organization=org,
+                            pid=pid,
+                            defaults={
+                                "full_name": None,
+                                "phone_e164": None,
+                                "whatsapp_opt_in": True,
+                            },
+                        )
+
+                        # Optional: keep student up-to-date without storing PII
+                        update_fields = []
+                        if student.classroom_id != classroom.id:
+                            student.classroom = classroom
+                            update_fields.append("classroom")
+
+                        #    Keep non-PII master data updated
+                        new_code = answers.get("unique_student_id")
+                        if new_code and student.student_code != new_code:
+                            student.student_code = new_code
+                            update_fields.append("student_code")
+
+                        new_dob = screening_form.cleaned_data.get("dob")
+                        if new_dob and student.dob != new_dob:
+                            student.dob = new_dob
+                            update_fields.append("dob")
+
+                        new_gender = answers.get("sex")
+                        if new_gender and student.gender != new_gender:
+                            student.gender = new_gender
+                            update_fields.append("gender")
+
+                        new_low_income = student_form.cleaned_data.get("is_low_income", False)
+                        if getattr(student, "is_low_income", False) != new_low_income:
+                            student.is_low_income = new_low_income
+                            update_fields.append("is_low_income")
+
+                        if student.primary_guardian_id != guardian.id:
+                            student.primary_guardian = guardian
+                            update_fields.append("primary_guardian")
+
+                        if update_fields:
+                            student.save(update_fields=update_fields + ["updated_at"])
+
+                    # --- Create Screening record linked by PID ---
                     now_dt = timezone.now()
                     height_cm = float(derived["height_cm"])
                     weight_kg = float(derived["weight_kg"])
 
                     s = Screening(
                         organization=org,
-                        student=student,
+                        student=student,                 # kept for compatibility, but linkage is PID
+                        pid=pid,                         # NEW linkage field
                         teacher=_teacher_fk(request),
                         screened_at=now_dt,
                         gender=student.gender,
@@ -352,7 +458,7 @@ def teacher_add_student(request, token=None):
                         height_cm=height_cm,
                         weight_kg=weight_kg,
                         muac_cm=derived.get("muac_cm"),
-                        answers=answers,
+                        answers=answers,                 # PII-free JSON
                         is_low_income_at_screen=student_form.cleaned_data.get("is_low_income", False),
                     )
 
@@ -372,6 +478,7 @@ def teacher_add_student(request, token=None):
                     if rr.derived.get("baz") is not None:
                         s.baz = rr.derived["baz"]
                     s.save()
+
 
                 log = _auto_send_for_screening(request, s)
                 messages.success(request, f"Student “{student.full_name}” created and screening completed.")

@@ -293,11 +293,8 @@ class NewScreeningForm(forms.ModelForm):
 
         answers = {
             # A
-            "student_name": data.get("student_name"),
             "unique_student_id": data.get("unique_student_id"),
-            "dob": str(dob) if dob else None,
             "sex": data.get("sex"),
-            "parent_phone_e164": data.get("parent_phone_e164"),
 
             # B
             "weight_kg_r1": str(w1) if w1 is not None else None,

@@ -203,38 +203,41 @@ def assist_apply(request):
     student = get_object_or_404(Student, pk=student_id, organization=screening.organization)
 
     # If an APPLIED/ FORWARDED exists recently, show an info banner (idempotency UX)
-    existing = Application.objects.filter(organization=screening.organization, student=student)\
-                                  .order_by("-applied_at").first()
+    pid = student.pid or getattr(screening, "pid", None)
+    existing = (
+        Application.objects
+        .filter(organization=screening.organization, pid=pid)
+        .order_by("-created_at")
+        .first()
+    )
 
     if request.method == "POST":
         form = ParentConsentForm(request.POST)
         if form.is_valid():
             with transaction.atomic():
-                # Link or create guardian from parent phone (if provided)
-                # IMPORTANT: Do not collect parent identifiers (name/phone/address)
-                # from this public link. Use what the school already captured.
-                g = getattr(student, "primary_guardian", None)
-
-                # Defensive fallback for legacy data where the student may not have
-                # a primary guardian yet: try to recover from screening answers.
-                if not g:
-                    phone = (getattr(screening, "answers", {}) or {}).get("parent_phone_e164") or ""
-                    phone = str(phone).strip()
-                    if phone:
-                        g, _ = Guardian.objects.get_or_create(
-                            organization=screening.organization,
-                            phone_e164=phone,
-                            defaults={"full_name": "Parent", "whatsapp_opt_in": True},
-                        )
-                        if not student.primary_guardian_id:
-                            student.primary_guardian = g
-                            student.save(update_fields=["primary_guardian"])
+                
+                g = getattr(student, "primary_guardian", None)   
 
                 low_income = bool(getattr(screening, "is_low_income_at_screen", False))
+
+                pid = student.pid or getattr(screening, "pid", None)
+
+                # Ensure guardian placeholder exists (PID keyed). No phone/name stored.
+                g = Guardian.objects.filter(organization=screening.organization, pid=pid).first()
+                if g is None and pid:
+                    g = Guardian.objects.create(
+                        organization=screening.organization,
+                        pid=pid,
+                        full_name=None,
+                        phone_e164=None,
+                        whatsapp_opt_in=True,
+                    )
+
                 app = Application.objects.create(
                     organization=screening.organization,
                     student=student,
                     guardian=g,
+                    pid=pid,
                     trigger_screening=screening,
                     low_income_declared=low_income,
                     income_verification_status=(

@@ -11,6 +11,7 @@ class Screening(models.Model):
 
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="screenings")
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="screenings")
+    pid = models.CharField(max_length=64, null=True, blank=True, db_index=True)
     teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="screenings")
     screened_at = models.DateTimeField(default=timezone.now, db_index=True)
 
@@ -34,8 +35,10 @@ class Screening(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["student", "-screened_at"]),
-            models.Index(fields=["organization", "risk_level"]),
+            models.Index(fields=["organization", "screened_at"]),
+            models.Index(fields=["organization", "student", "screened_at"]),
+            models.Index(fields=["organization", "risk_level", "screened_at"]),
+            models.Index(fields=["organization", "pid", "screened_at"]),  # NEW
         ]
 
     def __str__(self):
