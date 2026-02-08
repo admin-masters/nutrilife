@@ -251,3 +251,12 @@ SCREENING_ACADEMIC_YEAR_START_MONTH = int(os.getenv("SCREENING_ACADEMIC_YEAR_STA
 SCREENING_TERMS_URL = os.getenv("SCREENING_TERMS_URL", "")
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# --- PID (Pseudonymous ID) settings ---
+PID_HMAC_KEY = os.getenv("PID_HMAC_KEY")
+if not PID_HMAC_KEY:
+    # In production, you MUST set PID_HMAC_KEY so PID is non-reversible.
+    if not DEBUG:
+        raise RuntimeError("PID_HMAC_KEY environment variable is required when DEBUG=False")
+    # DEV fallback only (do not use in production)
+    PID_HMAC_KEY = SECRET_KEY
