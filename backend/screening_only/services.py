@@ -342,6 +342,7 @@ def prepare_screening_only_redflag_click_to_chat(
     *,
     form_language: str = "",
     questions_and_answers: str = "",
+    guardian_phone_e164: str = "",
 ) -> Tuple[Optional[MessageLog], str]:
     """
     Creates a click-to-chat MessageLog that opens WhatsApp on the device with a pre-filled message.
@@ -355,13 +356,13 @@ def prepare_screening_only_redflag_click_to_chat(
     if not guardian:
         link = (student.guardian_links.select_related("guardian").first() if hasattr(student, "guardian_links") else None)
         guardian = link.guardian if link else None
-    if not guardian or not getattr(guardian, "phone_e164", None):
+    if not guardian or not guardian_phone_e164:
         return None, ""
 
     lang = _normalize_form_language(form_language)
 
     # Idempotency: if the teacher refreshes / resends, reuse the same log (and message content).
-    idem = _screening_parent_whatsapp_idempotency_key(screening.id, guardian.phone_e164)
+    idem = _screening_parent_whatsapp_idempotency_key(screening.id, guardian_phone_e164)
     existing = MessageLog.objects.filter(idempotency_key=idem).first()
     if existing:
         payload = existing.payload or {}
@@ -403,7 +404,7 @@ def prepare_screening_only_redflag_click_to_chat(
     log = MessageLog.objects.create(
         idempotency_key=idem,
         organization=org,
-        to_phone_e164=guardian.phone_e164,
+        to_phone_e164=guardian_phone_e164,
         channel="whatsapp",
         template_code="SCREENING_ONLY_PARENT_NO_REDFLAG_V1",
         language=lang,

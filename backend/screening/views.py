@@ -46,7 +46,7 @@ def teacher_portal_token(request, token: str):
 def _teacher_fk(request):
     return request.user if getattr(request.user, "is_authenticated", False) else None
 
-def _auto_send_for_screening(request, s):
+def _auto_send_for_screening(request, s,guardian_phone_e164: str = ""):
     from django.contrib import messages
 
     # Preferred source: Student.primary_guardian (this is what your forms populate)
@@ -57,9 +57,10 @@ def _auto_send_for_screening(request, s):
         link = s.student.guardian_links.select_related("guardian").first()
         guardian = link.guardian if link else None
 
-    if not guardian or not getattr(guardian, "phone_e164", None):
-        messages.warning(request, "No parent phone number is available; cannot prepare WhatsApp message.")
-        return None
+        phone_to_use = (guardian_phone_e164 or "") or (getattr(guardian, "phone_e164", None) or "")
+        if not guardian or not phone_to_use:
+            messages.warning(request, "No parent phone number is available; cannot prepare WhatsApp message.")
+            return None
 
     try:
         # Screening-only orgs: multi-language parent WhatsApp message
@@ -83,10 +84,11 @@ def _auto_send_for_screening(request, s):
                 s,
                 form_language=form_language,
                 questions_and_answers=qa_text,
+                guardian_phone_e164=phone_to_use,
             )
 
         else:
-            log, _text = prepare_screening_status_click_to_chat(s)
+            log, _text = prepare_screening_status_click_to_chat(s, to_phone_e164=phone_to_use if phone_to_use else None)
 
         if log:
             messages.success(request, "WhatsApp message prepared. Please send to the parent.")
@@ -342,6 +344,7 @@ def teacher_add_student(request, token=None):
         screening_form = NewScreeningForm(request.POST, student=None, organization=org)
 
         if student_form.is_valid() and screening_form.is_valid():
+            guardian_phone_e164 = None
             try:
                 with transaction.atomic():
                     grade = student_form.cleaned_data["grade"]
@@ -361,6 +364,7 @@ def teacher_add_student(request, token=None):
                         screening_form.cleaned_data.get("phone_e164")
                         or screening_form.cleaned_data.get("parent_phone_e164")
                     )
+                    guardian_phone_e164 = phone_e164
 
                     pid = compute_pid(first_name=raw_first_name, phone_e164=phone_e164)
 
@@ -480,7 +484,7 @@ def teacher_add_student(request, token=None):
                     s.save()
 
 
-                log = _auto_send_for_screening(request, s)
+                log = _auto_send_for_screening(request, s,guardian_phone_e164=guardian_phone_e164)
                 messages.success(request, f"Student “{student.full_name}” created and screening completed.")
                 dashboard_url = reverse("screening_only:teacher_dashboard")
                 if log:

@@ -54,13 +54,17 @@ def _click_to_chat_text(body_lines: list[str]) -> str:
     """Join body lines for pre-filled WhatsApp text (simple, readable)."""
     return "\n".join([str(x) for x in body_lines if x])
 
-def prepare_redflag_education_click_to_chat(screening: Screening):
+def prepare_redflag_education_click_to_chat(screening: Screening, to_phone_e164=None):
     """
     Build the SAME payload as RED_EDU_V1, log it, DO NOT send.
     Return (MessageLog, prefilled_text).
     """
     org: Organization = screening.organization
-    guardian, phone = _guardian_and_phone(screening)
+    if to_phone_e164:
+        guardian = getattr(screening.student, "primary_guardian", None)
+        phone = to_phone_e164
+    else:
+        guardian, phone = _guardian_and_phone(screening)
     if not phone:
         raise ValueError("Missing guardian phone")
     lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
@@ -99,13 +103,17 @@ def prepare_redflag_education_click_to_chat(screening: Screening):
     )
     return log, _click_to_chat_text(components["body"])
 
-def prepare_redflag_assistance_click_to_chat(screening: Screening):
+def prepare_redflag_assistance_click_to_chat(screening: Screening, to_phone_e164=None):
     """
     Build the SAME payload as RED_ASSIST_V1, log it, DO NOT send.
     Return (MessageLog, prefilled_text).
     """
     org: Organization = screening.organization
-    guardian, phone = _guardian_and_phone(screening)
+    if to_phone_e164:
+        guardian = getattr(screening.student, "primary_guardian", None)
+        phone = to_phone_e164
+    else:
+        guardian, phone = _guardian_and_phone(screening)
     if not phone:
         raise ValueError("Missing guardian phone")
     lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
@@ -268,7 +276,7 @@ def send_compliance_reminder(supply) -> MessageLog:
     log.save(update_fields=["provider_msg_id","status","sent_at","updated_at"])
     return log
 
-def prepare_screening_status_click_to_chat(screening: Screening):
+def prepare_screening_status_click_to_chat(screening: Screening, to_phone_e164=None):
     """
     Prepare the Click-to-Chat WhatsApp message for the parent.
 
@@ -283,5 +291,5 @@ def prepare_screening_status_click_to_chat(screening: Screening):
     is_low_income = bool(getattr(screening, "is_low_income_at_screen", False))
 
     if level == "RED" and is_low_income:
-        return prepare_redflag_assistance_click_to_chat(screening)
-    return prepare_redflag_education_click_to_chat(screening)
+        return prepare_redflag_assistance_click_to_chat(screening, to_phone_e164=to_phone_e164)
+    return prepare_redflag_education_click_to_chat(screening, to_phone_e164=to_phone_e164)
