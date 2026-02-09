@@ -46,24 +46,27 @@ def teacher_portal_token(request, token: str):
 def _teacher_fk(request):
     return request.user if getattr(request.user, "is_authenticated", False) else None
 
-def _auto_send_for_screening(request, s,guardian_phone_e164: str = ""):
+def _auto_send_for_screening(request, s, *, parent_phone_e164: str = ""):
+    """
+    Prepare WhatsApp message log for screening s.
+
+    IMPORTANT CHANGE:
+      - We accept parent_phone_e164 (from the form submission) and pass it to the messaging
+        services, so they don't read guardian.phone_e164 from the DB (it is now NULL).
+    """
     from django.contrib import messages
 
-    # Preferred source: Student.primary_guardian (this is what your forms populate)
-    guardian = getattr(s.student, "primary_guardian", None)
+    guardian = getattr(getattr(s, "student", None), "primary_guardian", None)
 
-    # Fallback: if you ever use StudentGuardian links, try that too
-    if guardian is None:
-        link = s.student.guardian_links.select_related("guardian").first()
-        guardian = link.guardian if link else None
+    # Prefer DB phone if it exists (legacy behavior), else fallback to passed-in phone
+    phone = (getattr(guardian, "phone_e164", "") or "").strip() or (parent_phone_e164 or "").strip()
 
-        phone_to_use = (guardian_phone_e164 or "") or (getattr(guardian, "phone_e164", None) or "")
-        if not guardian or not phone_to_use:
-            messages.warning(request, "No parent phone number is available; cannot prepare WhatsApp message.")
-            return None
+    if not phone:
+        messages.warning(request, "No parent phone number is available; cannot prepare WhatsApp message.")
+        return None
 
     try:
-        # Screening-only orgs: multi-language parent WhatsApp message
+        # Screening-only orgs: use their custom multilingual message (only RED sends)
         try:
             s.organization.screening_only_profile
             is_screening_only = True
@@ -71,10 +74,9 @@ def _auto_send_for_screening(request, s,guardian_phone_e164: str = ""):
             is_screening_only = False
 
         if is_screening_only:
-            # in Screening Program, only RED sends parent WhatsApp
             if s.risk_level != "RED":
                 return None
-                
+
             from screening_only.services import prepare_screening_only_redflag_click_to_chat
             form_language = (request.POST.get("form_language") or request.GET.get("lang") or "").strip()
             qa_text = (request.POST.get("wa_questions_and_answers") or "").strip()
@@ -84,11 +86,11 @@ def _auto_send_for_screening(request, s,guardian_phone_e164: str = ""):
                 s,
                 form_language=form_language,
                 questions_and_answers=qa_text,
-                guardian_phone_e164=phone_to_use,
+                to_phone_e164=phone,   # <-- NEW
             )
-
         else:
-            log, _text = prepare_screening_status_click_to_chat(s, to_phone_e164=phone_to_use if phone_to_use else None)
+            # Standard flow: always create edu/assist message based on risk + income
+            log, _text = prepare_screening_status_click_to_chat(s, to_phone_e164=phone)  # <-- NEW
 
         if log:
             messages.success(request, "WhatsApp message prepared. Please send to the parent.")
@@ -267,7 +269,8 @@ def screening_create(request, student_id: int):
                 s.baz = rr.derived["baz"]
             s.save()
 
-            log = _auto_send_for_screening(request, s)
+            parent_phone = form.cleaned_data.get("parent_phone_e164") or ""
+            log = _auto_send_for_screening(request, s, parent_phone_e164=parent_phone)
             audit_log(_teacher_fk(request), org, "SCREENING_CREATED", target=s, payload={"risk": s.risk_level})
             dashboard_url = reverse("screening_only:teacher_dashboard")
             if log:
@@ -304,12 +307,16 @@ def screening_result(request, screening_id: int):
 @require_teacher_or_public
 def send_parent_whatsapp(request, screening_id):
     s = get_object_or_404(Screening, id=screening_id, organization=request.org)
-    log = _auto_send_for_screening(request, s)
     dashboard_url = reverse("screening_only:teacher_dashboard")
 
-    if log:
-        preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={dashboard_url}"
+    # Prefer reusing the message already created at screening submission time
+    existing = MessageLog.objects.filter(related_screening=s).order_by("-created_at").first()
+    if existing:
+        preview = reverse("whatsapp_preview", args=[existing.id]) + f"?next={dashboard_url}"
         return redirect(preview)
+
+    # If no existing log, we cannot reconstruct without a phone number (not stored anymore).
+    messages.error(request, "No WhatsApp message exists for this screening, and parent phone is not stored.")
     return redirect(dashboard_url)
 
 
@@ -344,7 +351,6 @@ def teacher_add_student(request, token=None):
         screening_form = NewScreeningForm(request.POST, student=None, organization=org)
 
         if student_form.is_valid() and screening_form.is_valid():
-            guardian_phone_e164 = None
             try:
                 with transaction.atomic():
                     grade = student_form.cleaned_data["grade"]
@@ -364,7 +370,6 @@ def teacher_add_student(request, token=None):
                         screening_form.cleaned_data.get("phone_e164")
                         or screening_form.cleaned_data.get("parent_phone_e164")
                     )
-                    guardian_phone_e164 = phone_e164
 
                     pid = compute_pid(first_name=raw_first_name, phone_e164=phone_e164)
 
@@ -484,7 +489,8 @@ def teacher_add_student(request, token=None):
                     s.save()
 
 
-                log = _auto_send_for_screening(request, s,guardian_phone_e164=guardian_phone_e164)
+                parent_phone = screening_form.cleaned_data.get("parent_phone_e164") or ""
+                log = _auto_send_for_screening(request, s, parent_phone_e164=parent_phone)
                 messages.success(request, f"Student “{student.full_name}” created and screening completed.")
                 dashboard_url = reverse("screening_only:teacher_dashboard")
                 if log:

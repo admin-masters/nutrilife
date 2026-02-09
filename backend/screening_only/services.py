@@ -342,12 +342,14 @@ def prepare_screening_only_redflag_click_to_chat(
     *,
     form_language: str = "",
     questions_and_answers: str = "",
-    guardian_phone_e164: str = "",
+    to_phone_e164: str = "",
 ) -> Tuple[Optional[MessageLog], str]:
     """
     Creates a click-to-chat MessageLog that opens WhatsApp on the device with a pre-filled message.
-    The message text is selected based on the teacher's chosen form language and includes the
-    localized question/answer list passed from the form submit.
+
+    IMPORTANT CHANGE:
+      - If to_phone_e164 is passed, we use it instead of guardian.phone_e164.
+      - This is required when guardian phone is no longer stored in DB.
     """
     org = screening.organization
     student = screening.student
@@ -356,19 +358,19 @@ def prepare_screening_only_redflag_click_to_chat(
     if not guardian:
         link = (student.guardian_links.select_related("guardian").first() if hasattr(student, "guardian_links") else None)
         guardian = link.guardian if link else None
-    if not guardian or not guardian_phone_e164:
+
+    phone = (to_phone_e164 or "").strip() or (getattr(guardian, "phone_e164", "") or "").strip()
+    if not phone:
         return None, ""
 
     lang = _normalize_form_language(form_language)
 
-    # Idempotency: if the teacher refreshes / resends, reuse the same log (and message content).
-    idem = _screening_parent_whatsapp_idempotency_key(screening.id, guardian_phone_e164)
+    idem = _screening_parent_whatsapp_idempotency_key(screening.id, phone)
     existing = MessageLog.objects.filter(idempotency_key=idem).first()
     if existing:
         payload = existing.payload or {}
         return existing, payload.get("_prefill_text", "")
 
-    # Teacher name (accounts.user.first_name / last_name)
     teacher_name = ""
     try:
         u = getattr(request, "user", None)
@@ -382,7 +384,6 @@ def prepare_screening_only_redflag_click_to_chat(
         teacher_name = "Class Teacher"
 
     school_name = (getattr(org, "name", "") or "").strip()
-    # Date of submission of the form (screening.screened_at)
     date_str = timezone.localtime(screening.screened_at).strftime("%d-%m-%Y")
 
     classroom = getattr(student, "classroom", None)
@@ -404,7 +405,7 @@ def prepare_screening_only_redflag_click_to_chat(
     log = MessageLog.objects.create(
         idempotency_key=idem,
         organization=org,
-        to_phone_e164=guardian_phone_e164,
+        to_phone_e164=phone,
         channel="whatsapp",
         template_code="SCREENING_ONLY_PARENT_NO_REDFLAG_V1",
         language=lang,

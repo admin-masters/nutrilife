@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 from django.utils import timezone
 from accounts.models import Organization
 from roster.models import Guardian
@@ -36,9 +36,15 @@ LANG_CODE = {
     "local": "en", # fallback; you can add actual local (e.g., "mr") once approved
 }
 
-def _guardian_and_phone(screening: Screening):
-    g = screening.student.primary_guardian
-    return g, (g.phone_e164 if g else "")
+def _guardian_and_phone(screening: Screening, *, to_phone_e164: Optional[str] = None):
+    """
+    Returns (guardian, phone).
+    If to_phone_e164 is provided, it is used instead of guardian.phone_e164.
+    This is required when we do not store guardian phone numbers in the DB.
+    """
+    g = getattr(getattr(screening, "student", None), "primary_guardian", None)
+    phone = (to_phone_e164 or "").strip() or (getattr(g, "phone_e164", "") or "").strip()
+    return g, phone
 
 # def _make_idem_key(*parts):
 #     raw = "|".join(str(p) for p in parts)
@@ -54,19 +60,18 @@ def _click_to_chat_text(body_lines: list[str]) -> str:
     """Join body lines for pre-filled WhatsApp text (simple, readable)."""
     return "\n".join([str(x) for x in body_lines if x])
 
-def prepare_redflag_education_click_to_chat(screening: Screening, to_phone_e164=None):
+def prepare_redflag_education_click_to_chat(screening: Screening, *, to_phone_e164: Optional[str] = None):
     """
     Build the SAME payload as RED_EDU_V1, log it, DO NOT send.
     Return (MessageLog, prefilled_text).
+
+    Phone is passed explicitly when guardian phone is not stored in DB.
     """
     org: Organization = screening.organization
-    if to_phone_e164:
-        guardian = getattr(screening.student, "primary_guardian", None)
-        phone = to_phone_e164
-    else:
-        guardian, phone = _guardian_and_phone(screening)
+    guardian, phone = _guardian_and_phone(screening, to_phone_e164=to_phone_e164)
     if not phone:
-        raise ValueError("Missing guardian phone")
+        raise ValueError("Missing guardian phone (pass to_phone_e164)")
+
     lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
     flags_txt = flags_to_text(screening.red_flags, lang)
     video = edu_video_url(lang)
@@ -103,25 +108,23 @@ def prepare_redflag_education_click_to_chat(screening: Screening, to_phone_e164=
     )
     return log, _click_to_chat_text(components["body"])
 
-def prepare_redflag_assistance_click_to_chat(screening: Screening, to_phone_e164=None):
+def prepare_redflag_assistance_click_to_chat(screening: Screening, *, to_phone_e164: Optional[str] = None):
     """
     Build the SAME payload as RED_ASSIST_V1, log it, DO NOT send.
     Return (MessageLog, prefilled_text).
+
+    Phone is passed explicitly when guardian phone is not stored in DB.
     """
     org: Organization = screening.organization
-    if to_phone_e164:
-        guardian = getattr(screening.student, "primary_guardian", None)
-        phone = to_phone_e164
-    else:
-        guardian, phone = _guardian_and_phone(screening)
+    guardian, phone = _guardian_and_phone(screening, to_phone_e164=to_phone_e164)
     if not phone:
-        raise ValueError("Missing guardian phone")
+        raise ValueError("Missing guardian phone (pass to_phone_e164)")
+
     lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
     flags_txt = flags_to_text(screening.red_flags, lang)
     video = edu_video_url(lang)
     apply_url = assist_apply_url(screening.student_id, screening.id, lang)
 
-    # NOTE: We do NOT alter payload shape; _components is not stored for ASSIST per current code.
     idem = _make_idem_key("red_assist", phone, screening.id)
     existing = MessageLog.objects.filter(idempotency_key=idem).first()
     if existing:
@@ -148,16 +151,16 @@ def prepare_redflag_assistance_click_to_chat(screening: Screening, to_phone_e164
         idempotency_key=idem,
         status=MessageLog.Status.QUEUED,
     )
-    # Pre-filled WhatsApp text uses only current payload fields/links
     return log, _click_to_chat_text([flags_txt, video, apply_url])
 
 @transaction.atomic
-def send_redflag_education(screening):
+def send_redflag_education(screening: Screening, *, to_phone_e164: Optional[str] = None):
     org = screening.organization
-    guardian, phone = _guardian_and_phone(screening)
+    guardian, phone = _guardian_and_phone(screening, to_phone_e164=to_phone_e164)
     if not phone:
-        raise ValueError("Missing guardian phone")
-    lang = choose_language(getattr(guardian,"preferred_language",None), getattr(org,"locale",None))
+        raise ValueError("Missing guardian phone (pass to_phone_e164)")
+
+    lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
     flags_txt = flags_to_text(screening.red_flags, lang)
     video = edu_video_url(lang)
 
@@ -167,12 +170,10 @@ def send_redflag_education(screening):
     }
 
     idem = _make_idem_key("red_edu", phone, screening.id)
-    # Idempotency shortcut: if exists -> return
     existing = MessageLog.objects.filter(idempotency_key=idem).first()
     if existing:
         return existing
 
-    # Rate limiting
     check_global_per_min()
     check_per_phone_daily(phone, "RED_EDU_V1")
 
@@ -184,29 +185,32 @@ def send_redflag_education(screening):
         payload={"screening_id": screening.id, "flags": screening.red_flags, "video": video, "_components": components},
         related_screening=screening,
         idempotency_key=idem,
-        status=MessageLog.Status.QUEUED
+        status=MessageLog.Status.QUEUED,
     )
-    from .tasks import send_message_task  # local import breaks the cycle
+    from .tasks import send_message_task
     send_message_task.delay(log.id)
     return log
 
 
-def send_redflag_assistance(screening: Screening) -> MessageLog:
+def send_redflag_assistance(screening: Screening, *, to_phone_e164: Optional[str] = None) -> MessageLog:
     org: Organization = screening.organization
-    guardian, phone = _guardian_and_phone(screening)
-    lang = choose_language(getattr(guardian,"preferred_language",None), getattr(org,"locale",None))
+    guardian, phone = _guardian_and_phone(screening, to_phone_e164=to_phone_e164)
+    if not phone:
+        raise ValueError("Missing guardian phone (pass to_phone_e164)")
+
+    lang = choose_language(getattr(guardian, "preferred_language", None), getattr(org, "locale", None))
     flags_txt = flags_to_text(screening.red_flags, lang)
     video = edu_video_url(lang)
     apply_url = assist_apply_url(screening.student_id, screening.id, lang)
 
     components = {
         "body": [
-            screening.student.full_name,  # {{1}}
-            flags_txt,                    # {{2}}
-            video,                        # {{3}}
-            apply_url                     # {{4}}
+            screening.student.full_name,
+            flags_txt,
+            video,
+            apply_url
         ],
-        "buttons": [video, apply_url]     # Button 0 -> video, Button 1 -> apply
+        "buttons": [video, apply_url]
     }
 
     log = MessageLog.objects.create(
@@ -216,15 +220,15 @@ def send_redflag_assistance(screening: Screening) -> MessageLog:
         language=lang,
         payload={"screening_id": screening.id, "flags": screening.red_flags, "video": video, "apply_url": apply_url},
         related_screening=screening,
-        status=MessageLog.Status.QUEUED
+        status=MessageLog.Status.QUEUED,
     )
 
     prov = _provider()
     msg_id, pstatus = prov.send_template(phone, TEMPLATE_NAME["RED_ASSIST_V1"], LANG_CODE[lang], components)
     log.provider_msg_id = msg_id
-    log.status = MessageLog.Status.SENT if pstatus.lower() == "sent" else MessageLog.Status.QUEUED
+    log.status = MessageLog.Status.SENT if str(pstatus).lower() == "sent" else MessageLog.Status.QUEUED
     log.sent_at = timezone.now()
-    log.save(update_fields=["provider_msg_id","status","sent_at","updated_at"])
+    log.save(update_fields=["provider_msg_id", "status", "sent_at", "updated_at"])
     return log
 
 # add to TEMPLATE_NAME mapping 
@@ -276,16 +280,15 @@ def send_compliance_reminder(supply) -> MessageLog:
     log.save(update_fields=["provider_msg_id","status","sent_at","updated_at"])
     return log
 
-def prepare_screening_status_click_to_chat(screening: Screening, to_phone_e164=None):
+def prepare_screening_status_click_to_chat(screening: Screening, *, to_phone_e164: Optional[str] = None):
     """
     Prepare the Click-to-Chat WhatsApp message for the parent.
 
-    REQUIRED business rule:
-      - If the student is classified as RED AND is low-income -> send the assistance template (RED_ASSIST_V1)
-      - In every other case (GREEN, YELLOW, or RED non low-income) -> send the education template (RED_EDU_V1)
+    Business rule:
+      - If RED and low-income -> assistance template
+      - else -> education template
 
-    This function does NOT send via provider; it only creates a MessageLog and returns the
-    pre-filled text used in the WhatsApp Click-to-Chat link.
+    Phone is passed explicitly when guardian phone is not stored in DB.
     """
     level = (screening.risk_level or "GREEN").upper()
     is_low_income = bool(getattr(screening, "is_low_income_at_screen", False))
