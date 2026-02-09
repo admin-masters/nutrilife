@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from messaging.services import whatsapp_click_to_chat_url
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -330,9 +330,9 @@ def _render_parent_whatsapp_message(
     return msg
 
 
-def _screening_parent_whatsapp_idempotency_key(screening_id: int, to_phone_e164: str) -> str:
-    """One message per (screening, phone)."""
-    raw = f"SCREENING_PARENT_WHATSAPP_V1|{screening_id}|{to_phone_e164}"
+def _screening_parent_whatsapp_idempotency_key(screening_id: int, pid: str) -> str:
+    """One message per (screening, pid)."""
+    raw = f"SCREENING_PARENT_WHATSAPP_V1|{screening_id}|{pid}"
     return str(uuid.uuid5(uuid.NAMESPACE_URL, raw))
 
 
@@ -345,31 +345,19 @@ def prepare_screening_only_redflag_click_to_chat(
     to_phone_e164: str = "",
 ) -> Tuple[Optional[MessageLog], str]:
     """
-    Creates a click-to-chat MessageLog that opens WhatsApp on the device with a pre-filled message.
-
-    IMPORTANT CHANGE:
-      - If to_phone_e164 is passed, we use it instead of guardian.phone_e164.
-      - This is required when guardian phone is no longer stored in DB.
+    Returns (MessageLog, wa_url). Does NOT store phone or payload in MessageLog.
+    Stores only pid + metadata.
     """
     org = screening.organization
     student = screening.student
 
-    guardian = getattr(student, "primary_guardian", None)
-    if not guardian:
-        link = (student.guardian_links.select_related("guardian").first() if hasattr(student, "guardian_links") else None)
-        guardian = link.guardian if link else None
+    pid = (getattr(screening, "pid", "") or getattr(student, "pid", "") or "").strip()
 
-    phone = (to_phone_e164 or "").strip() or (getattr(guardian, "phone_e164", "") or "").strip()
+    phone = (to_phone_e164 or "").strip()
     if not phone:
         return None, ""
 
     lang = _normalize_form_language(form_language)
-
-    idem = _screening_parent_whatsapp_idempotency_key(screening.id, phone)
-    existing = MessageLog.objects.filter(idempotency_key=idem).first()
-    if existing:
-        payload = existing.payload or {}
-        return existing, payload.get("_prefill_text", "")
 
     teacher_name = ""
     try:
@@ -402,23 +390,21 @@ def prepare_screening_only_redflag_click_to_chat(
         questions_and_answers=questions_and_answers,
     )
 
+    wa_url = whatsapp_click_to_chat_url(phone, prefill_text)
+
+    idem = _screening_parent_whatsapp_idempotency_key(screening.id, pid)
+    existing = MessageLog.objects.filter(idempotency_key=idem).first()
+    if existing:
+        return existing, wa_url
+
     log = MessageLog.objects.create(
         idempotency_key=idem,
         organization=org,
-        to_phone_e164=phone,
+        pid=pid,
         channel="whatsapp",
         template_code="SCREENING_ONLY_PARENT_NO_REDFLAG_V1",
         language=lang,
-        payload={
-            "_prefill_text": prefill_text,
-            "screening_id": screening.id,
-            "parent_token": parent_token,
-            "video_url": video_url,
-            "form_language": lang,
-            "questions_and_answers": (questions_and_answers or ""),
-        },
         status=MessageLog.Status.QUEUED,
         related_screening=screening,
     )
-
-    return log, prefill_text
+    return log, wa_url
