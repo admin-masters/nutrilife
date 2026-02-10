@@ -1484,7 +1484,7 @@
           {{ form.health_general_poor }}
         </div>
 
-        <select class="yn-proxy" data-checkbox-id="{{ form.health_general_poor.id_for_label }}" data-invert-logic="true">
+        <select class="yn-proxy" data-checkbox-id="{{ form.health_general_poor.id_for_label }}">
           <option value="">Select</option>
           <option value="no">No</option>
           <option value="yes">Yes</option>
@@ -2192,11 +2192,10 @@
         var cb = document.getElementById(checkboxId);
         if (!cb) return;
         // Only sync if checkbox is checked
-        var invert = sel.getAttribute('data-invert-logic') === 'true';
-        var effectiveChecked = invert ? !cb.checked : cb.checked;
-        if (effectiveChecked) {
+        if (cb.checked) {
           sel.value = 'yes';
         } else if (sel.value === '') {
+          // keep placeholder if nothing chosen
           return;
         } else {
           sel.value = 'no';
@@ -2209,9 +2208,7 @@
         var cb = document.getElementById(checkboxId);
         if (!cb) return;
 
-        var invert = sel.getAttribute('data-invert-logic') === 'true';
-        var isYes = (String(sel.value).toLowerCase() === 'yes');
-        cb.checked = invert ? !isYes : isYes;
+        cb.checked = (String(sel.value).toLowerCase() === 'yes');
 
         // Trigger change so existing scripts (e.g. menarche details) react.
         try { cb.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
