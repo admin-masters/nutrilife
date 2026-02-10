@@ -133,7 +133,15 @@ def compute_risk(
         flags.append("muac_yellow")
 
     # --- Section C: Quick Health Red Flags (any YES => RED) ---
-    health_red = [k for k in _HEALTH_REDFLAG_KEYS if bool(answers.get(k))]
+    health_red = []
+
+    for key in _HEALTH_REDFLAG_KEYS:
+        if key=="health_general_poor":
+            if answers.get(key) is False:
+                health_red.append("health_general_poor")
+        else:
+            if answers.get(key) is True:
+                health_red.append(key)
 
     appetite = answers.get("appetite")
     # Old records: GOOD/NORMAL/POOR. New records: boolean where True means "Yes".
