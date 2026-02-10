@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from html import escape as html_escape
+
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -51,28 +51,38 @@ def _teacher_fk(request):
 def _open_in_new_tab_then_redirect(*, wa_url: str, redirect_url: str) -> HttpResponse:
     """
     Returns a tiny HTML page that opens WhatsApp in a new tab and then redirects
-    the current tab to redirect_url. Uses a form with target="_blank" so the
-    new tab is not blocked by popup blockers (window.open in a loaded page would be).
+    the current tab to redirect_url.
     """
+    wa_js = _json.dumps(wa_url)
     next_js = _json.dumps(redirect_url)
-    # Escape for use in HTML attribute (so " and & don't break the form)
-    wa_url_attr = html_escape(wa_url)
 
     html = f"""<!doctype html>
 <html>
   <head><meta charset="utf-8"><title>Opening WhatsApp…</title></head>
   <body>
-    <form id="waform" action="{wa_url_attr}" target="_blank" method="get" rel="noopener"></form>
     <script>
       (function () {{
-        var form = document.getElementById("waform");
-        if (form) form.submit();
-        window.location.href = {next_js};
+        var waUrl = {wa_js};
+        var redirectUrl = {next_js};
+        console.log("[NutriLift] Opening WhatsApp page loaded.");
+        console.log("[NutriLift] wa_url:", waUrl);
+        console.log("[NutriLift] redirect_url:", redirectUrl);
+        var opened = null;
+        try {{
+          opened = window.open(waUrl, "_blank", "noopener");
+          console.log("[NutriLift] window.open() returned:", opened);
+          if (opened == null) {{
+            console.warn("[NutriLift] Pop-up was blocked. Allow pop-ups for this site or use the link below.");
+          }}
+        }} catch (e) {{
+          console.error("[NutriLift] window.open error:", e);
+        }}
+        window.location.href = redirectUrl;
       }})();
     </script>
     <noscript>
       <p>Popups are disabled or JavaScript is off.</p>
-      <p><a href="{wa_url_attr}" target="_blank" rel="noopener">Open WhatsApp</a></p>
+      <p><a href="{wa_url}" target="_blank" rel="noopener">Open WhatsApp</a></p>
       <p><a href="{redirect_url}">Return to dashboard</a></p>
     </noscript>
   </body>
