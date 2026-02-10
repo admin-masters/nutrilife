@@ -137,7 +137,7 @@ def compute_risk(
 
     appetite = answers.get("appetite")
     # Old records: GOOD/NORMAL/POOR. New records: boolean where True means "Yes".
-    if appetite is True or (isinstance(appetite, str) and appetite.upper() == "POOR"):
+    if appetite is False or (isinstance(appetite, str) and appetite.upper() == "POOR"):
         health_red.append("appetite_not_hungry")
 
     # Adolescent girls (age >=10 only): heavy bleeding + irregular cycles
@@ -170,16 +170,18 @@ def compute_risk(
 
     derived["health_red_flags"] = health_red
     flags.extend(health_red)
+
     # --- Section F: Food Security ---
     hunger = (answers.get("hunger_vital_sign") or "").upper()
     derived["hunger_vital_sign"] = hunger
+    
     food_security_red = hunger in {"SOMETIMES_TRUE", "NEVER_TRUE"}
     if food_security_red:
         flags.append("food_insecurity")
 
     # --- Section D + E: Diet + Program (drives YELLOW) ---
     diet_flags = []
-    diet_type = (answers.get("diet_type") or "").upper()  # LACTO_VEG / LACTO_OVO / NON_VEG
+    diet_type = (answers.get("diet_type") or "").upper()  #LACTO_VEG / LACTO_OVO / NON_VEG
     derived["diet_type"] = diet_type
 
     if answers.get("breakfast_eaten") is False:
