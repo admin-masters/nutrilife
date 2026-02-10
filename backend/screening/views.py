@@ -63,17 +63,17 @@ def _open_in_new_tab_then_redirect(*, wa_url: str, redirect_url: str) -> HttpRes
 <html>
   <head><meta charset="utf-8"><title>Screening complete</title>
   <style>
-    body {{ margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }}
-    .modal-overlay {{ position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }}
+    body {{ margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #fafafa; min-height: 100vh; display: flex; align-items: center; justify-content: center; }}
+    .modal-overlay {{ position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }}
     .modal {{ background: #fff; border-radius: 12px; padding: 24px; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); text-align: center; }}
-    .modal h2 {{ margin: 0 0 12px 0; font-size: 1.25rem; color: #1a1a1a; }}
+    .modal h2 {{ margin: 0 0 12px 0; font-size: 1.25rem; color: #111; }}
     .modal p {{ margin: 0 0 20px 0; color: #555; font-size: 0.95rem; line-height: 1.4; }}
     .modal .buttons {{ display: flex; flex-direction: column; gap: 10px; }}
     .modal .btn {{ display: inline-block; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 500; text-decoration: none; border: none; cursor: pointer; transition: background 0.15s; }}
-    .modal .btn-whatsapp {{ background: #25D366; color: #fff; }}
-    .modal .btn-whatsapp:hover {{ background: #20bd5a; }}
-    .modal .btn-dashboard {{ background: #e0e0e0; color: #333; }}
-    .modal .btn-dashboard:hover {{ background: #d0d0d0; }}
+    .modal .btn-whatsapp {{ background: #000; color: #fff; }}
+    .modal .btn-whatsapp:hover {{ opacity: 0.9; }}
+    .modal .btn-dashboard {{ background: #f3f4f6; color: #374151; }}
+    .modal .btn-dashboard:hover {{ background: #e5e7eb; }}
   </style>
   </head>
   <body>
