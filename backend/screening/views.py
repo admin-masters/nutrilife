@@ -26,6 +26,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 from roster.pid import compute_pid
+from django.http import HttpResponse
+import json as _json
 
 def teacher_portal_token(request, token: str):
     try:
@@ -46,27 +48,83 @@ def teacher_portal_token(request, token: str):
 def _teacher_fk(request):
     return request.user if getattr(request.user, "is_authenticated", False) else None
 
-def _auto_send_for_screening(request, s, *, parent_phone_e164: str = ""):
+def _open_in_new_tab_then_redirect(*, wa_url: str, redirect_url: str) -> HttpResponse:
     """
-    Prepare WhatsApp message log for screening s.
-
-    IMPORTANT CHANGE:
-      - We accept parent_phone_e164 (from the form submission) and pass it to the messaging
-        services, so they don't read guardian.phone_e164 from the DB (it is now NULL).
+    Returns an HTML page with a modal that says "Open WhatsApp". When the user
+    clicks the button, window.open() is user-triggered so it is not blocked.
     """
-    from django.contrib import messages
+    wa_js = _json.dumps(wa_url)
+    next_js = _json.dumps(redirect_url)
+    # Escape for use in HTML attributes if needed (wa_url is already in JS)
+    wa_escaped = wa_url.replace("'", "&#39;").replace('"', "&quot;")
+    redirect_escaped = redirect_url.replace("'", "&#39;").replace('"', "&quot;")
 
-    guardian = getattr(getattr(s, "student", None), "primary_guardian", None)
+    html = f"""<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Screening complete</title>
+  <style>
+    body {{ margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }}
+    .modal-overlay {{ position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }}
+    .modal {{ background: #fff; border-radius: 12px; padding: 24px; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); text-align: center; }}
+    .modal h2 {{ margin: 0 0 12px 0; font-size: 1.25rem; color: #1a1a1a; }}
+    .modal p {{ margin: 0 0 20px 0; color: #555; font-size: 0.95rem; line-height: 1.4; }}
+    .modal .buttons {{ display: flex; flex-direction: column; gap: 10px; }}
+    .modal .btn {{ display: inline-block; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 500; text-decoration: none; border: none; cursor: pointer; transition: background 0.15s; }}
+    .modal .btn-whatsapp {{ background: #25D366; color: #fff; }}
+    .modal .btn-whatsapp:hover {{ background: #20bd5a; }}
+    .modal .btn-dashboard {{ background: #e0e0e0; color: #333; }}
+    .modal .btn-dashboard:hover {{ background: #d0d0d0; }}
+  </style>
+  </head>
+  <body>
+    <div class="modal-overlay" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+      <div class="modal">
+        <h2 id="modal-title">Screening complete</h2>
+        <p>Open WhatsApp to send the message to the parent, then go to the dashboard.</p>
+        <div class="buttons">
+          <button type="button" class="btn btn-whatsapp" id="open-whatsapp">Open WhatsApp</button>
+          <a href="{redirect_escaped}" class="btn btn-dashboard" id="go-dashboard">Go to dashboard</a>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {{
+        var waUrl = {wa_js};
+        var redirectUrl = {next_js};
+        var openBtn = document.getElementById("open-whatsapp");
+        var dashboardLink = document.getElementById("go-dashboard");
+        openBtn.addEventListener("click", function () {{
+          try {{
+            window.open(waUrl, "_blank", "noopener");
+            window.location.href = redirectUrl;
+          }} catch (e) {{
+            console.error("[NutriLift] window.open error:", e);
+          }}
+        }});
+      }})();
+    </script>
+    <noscript>
+      <p style="padding: 20px; text-align: center;">
+        <a href="{wa_escaped}" target="_blank" rel="noopener">Open WhatsApp</a> &middot;
+        <a href="{redirect_escaped}">Go to dashboard</a>
+      </p>
+    </noscript>
+  </body>
+</html>"""
+    return HttpResponse(html)
 
-    # Prefer DB phone if it exists (legacy behavior), else fallback to passed-in phone
-    phone = (getattr(guardian, "phone_e164", "") or "").strip() or (parent_phone_e164 or "").strip()
-
+def _prepare_parent_whatsapp_url(request, s, *, parent_phone_e164: str) -> str | None:
+    """
+    Builds the WhatsApp click-to-chat URL immediately (no preview page).
+    Also creates a MessageLog WITHOUT phone/payload (stores only pid + metadata).
+    """
+    phone = (parent_phone_e164 or "").strip()
     if not phone:
-        messages.warning(request, "No parent phone number is available; cannot prepare WhatsApp message.")
+        messages.warning(request, "No parent phone number provided; cannot open WhatsApp.")
         return None
 
     try:
-        # Screening-only orgs: use their custom multilingual message (only RED sends)
+        # Screening-only orgs
         try:
             s.organization.screening_only_profile
             is_screening_only = True
@@ -74,6 +132,7 @@ def _auto_send_for_screening(request, s, *, parent_phone_e164: str = ""):
             is_screening_only = False
 
         if is_screening_only:
+            # In Screening Program, only RED sends parent WhatsApp
             if s.risk_level != "RED":
                 return None
 
@@ -81,24 +140,26 @@ def _auto_send_for_screening(request, s, *, parent_phone_e164: str = ""):
             form_language = (request.POST.get("form_language") or request.GET.get("lang") or "").strip()
             qa_text = (request.POST.get("wa_questions_and_answers") or "").strip()
 
-            log, _text = prepare_screening_only_redflag_click_to_chat(
+            _log, wa_url = prepare_screening_only_redflag_click_to_chat(
                 request,
                 s,
                 form_language=form_language,
                 questions_and_answers=qa_text,
-                to_phone_e164=phone,   # <-- NEW
+                to_phone_e164=phone,
             )
-        else:
-            # Standard flow: always create edu/assist message based on risk + income
-            log, _text = prepare_screening_status_click_to_chat(s, to_phone_e164=phone)  # <-- NEW
+            return wa_url or None
 
-        if log:
-            messages.success(request, "WhatsApp message prepared. Please send to the parent.")
-        return log
+        # Standard orgs
+        from messaging.services import prepare_screening_status_click_to_chat
+        _log, wa_url = prepare_screening_status_click_to_chat(s, to_phone_e164=phone)
+        return wa_url or None
 
+    except RateLimitExceeded as e:
+        messages.error(request, str(e))
+        return None
     except Exception:
-        logger.exception("Auto-send whatsapp failed")
-        messages.error(request, "Could not prepare WhatsApp message.")
+        logger.exception("WhatsApp URL preparation failed")
+        messages.error(request, "Could not open WhatsApp.")
         return None
 
 
@@ -270,13 +331,14 @@ def screening_create(request, student_id: int):
             s.save()
 
             parent_phone = form.cleaned_data.get("parent_phone_e164") or ""
-            log = _auto_send_for_screening(request, s, parent_phone_e164=parent_phone)
-            audit_log(_teacher_fk(request), org, "SCREENING_CREATED", target=s, payload={"risk": s.risk_level})
             dashboard_url = reverse("screening_only:teacher_dashboard")
-            if log:
-                preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={dashboard_url}"
-                
-                return redirect(preview)
+
+            parent_phone = (form.cleaned_data.get("parent_phone_e164") or "").strip()
+            wa_url = _prepare_parent_whatsapp_url(request, s, parent_phone_e164=parent_phone)
+
+            if wa_url:
+                return _open_in_new_tab_then_redirect(wa_url=wa_url, redirect_url=dashboard_url)
+
             return redirect(dashboard_url)
 
         return render(request, "screening/screening_form.html", {"student": student, "form": form})
@@ -309,15 +371,18 @@ def send_parent_whatsapp(request, screening_id):
     s = get_object_or_404(Screening, id=screening_id, organization=request.org)
     dashboard_url = reverse("screening_only:teacher_dashboard")
 
-    # Prefer reusing the message already created at screening submission time
-    existing = MessageLog.objects.filter(related_screening=s).order_by("-created_at").first()
-    if existing:
-        preview = reverse("whatsapp_preview", args=[existing.id]) + f"?next={dashboard_url}"
-        return redirect(preview)
+    # Since we do not store phone numbers, the caller must provide it
+    phone = (request.GET.get("phone_e164") or request.POST.get("phone_e164") or "").strip()
+    if not phone:
+        messages.error(request, "Parent phone is not stored. Please enter the phone number to open WhatsApp.")
+        return redirect(dashboard_url)
 
-    # If no existing log, we cannot reconstruct without a phone number (not stored anymore).
-    messages.error(request, "No WhatsApp message exists for this screening, and parent phone is not stored.")
-    return redirect(dashboard_url)
+    wa_url = _prepare_parent_whatsapp_url(request, s, parent_phone_e164=phone)
+    if not wa_url:
+        return redirect(dashboard_url)
+
+    # This redirect will be opened in a new tab if the link/form uses target="_blank"
+    return redirect(wa_url)
 
 
 @require_teacher_or_public
@@ -490,12 +555,16 @@ def teacher_add_student(request, token=None):
 
 
                 parent_phone = screening_form.cleaned_data.get("parent_phone_e164") or ""
-                log = _auto_send_for_screening(request, s, parent_phone_e164=parent_phone)
-                messages.success(request, f"Student “{student.full_name}” created and screening completed.")
                 dashboard_url = reverse("screening_only:teacher_dashboard")
-                if log:
-                    preview = reverse("whatsapp_preview", args=[log.id]) + f"?next={dashboard_url}"
-                    return redirect(preview)
+
+                parent_phone = (screening_form.cleaned_data.get("parent_phone_e164") or "").strip()
+                wa_url = _prepare_parent_whatsapp_url(request, s, parent_phone_e164=parent_phone)
+
+                messages.success(request, "Student created and screening completed.")
+
+                if wa_url:
+                    return _open_in_new_tab_then_redirect(wa_url=wa_url, redirect_url=dashboard_url)
+
                 return redirect(dashboard_url)
 
             except (IntegrityError, ValidationError, ValueError) as e:
