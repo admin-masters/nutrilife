@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Select Class and Section</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .container {
+      width: 90%;
+      max-width: 520px;
+      margin: 40px auto;
+      background: white;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.08);
+    }
+    h1 { margin: 0 0 16px; }
+    .row { text-align: left; margin: 14px 0; }
+    label { display:block; font-weight: bold; margin-bottom: 6px; }
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      background: #fff;
+    }
+    .btn {
+      margin-top: 18px;
+      display: inline-block;
+      padding: 12px 18px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn:hover { background: #0056b3; }
+    .messages { text-align:left; margin: 10px 0 0; }
+    .messages .error {
+      background: #ffe6e6;
+      border: 1px solid #ffb3b3;
+      padding: 10px;
+      border-radius: 6px;
+      color: #a40000;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Select Class and Section</h1>
+
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="error">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="row">
+        <label for="id_grade">Class</label>
+        <select id="id_grade" name="grade" required>
+          <option value="">Select class</option>
+          {% for g in grades %}
+            <option value="{{ g }}" {% if selected_grade == g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="id_division">Section</label>
+        <select id="id_division" name="division" required>
+          <option value="">Select section</option>
+        </select>
+      </div>
+
+      <button class="btn" type="submit">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    const divisionsByGrade = {{ divisions_by_grade|safe }};
+    const gradeSelect = document.getElementById("id_grade");
+    const divisionSelect = document.getElementById("id_division");
+
+    let initialDivision = "{{ selected_division|escapejs }}";
+
+    function syncDivisionOptions() {
+      const grade = gradeSelect.value;
+
+      divisionSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Select section";
+      divisionSelect.appendChild(placeholder);
+
+      if (!grade || !divisionsByGrade[grade]) return;
+
+      divisionsByGrade[grade].forEach(function(div) {
+        const opt = document.createElement("option");
+        opt.value = div;
+        opt.textContent = div || "—";
+        if (initialDivision && div === initialDivision) opt.selected = true;
+        divisionSelect.appendChild(opt);
+      });
+    }
+
+    gradeSelect.addEventListener("change", function() {
+      initialDivision = "";   // user is changing grade; don't auto-select old division
+      syncDivisionOptions();
+    });
+
+    // init
+    syncDivisionOptions();
+  </script>
+</body>
+</html>

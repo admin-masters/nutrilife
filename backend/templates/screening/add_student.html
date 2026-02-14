@@ -1403,32 +1403,41 @@
 
       <!-- CLASS DETAILS -->
       <fieldset>
-        <legend data-i18n="legend.class_assignment">Class assignment</legend>
+  <legend>Class assignment</legend>
 
-        
+    {% if student_form.initial.grade and student_form.initial.division %}
+      {{ student_form.grade.as_hidden }}
+      {{ student_form.division.as_hidden }}
 
-        <div class="grid">
-          <div class="field">
-            <label for="{{ student_form.grade.id_for_label }}" data-i18n="field.grade.label">{{ student_form.grade.label }}</label>
-            {{ student_form.grade }}
-            {% if student_form.grade.errors %}<div class="errors">{{ student_form.grade.errors }}</div>{% endif %}
-          </div>
-
-          <div class="field">
-            <label for="{{ student_form.division.id_for_label }}" data-i18n="field.division.label">{{ student_form.division.label }}</label>
-
-            {{ student_form.division }}
-            {% if student_form.division.errors %}<div class="errors">{{ student_form.division.errors }}</div>{% endif %}
-          </div>
+      <p style="margin: 0 0 10px; color: #444;">
+        <strong>Class &amp; Section:</strong>
+        {{ student_form.initial.grade }} - {{ student_form.initial.division }}
+      </p>
+    {% else %}
+      <div class="row">
+        <div>
+          <label for="id_grade">Grade / Class</label>
+          {{ student_form.grade }}
+          {% if student_form.grade.errors %}<p class="error">{{ student_form.grade.errors.0 }}</p>{% endif %}
         </div>
 
-        <div class="checks" style="margin-top: 10px;">
-          <div class="check">
-            {{ student_form.is_low_income }}
-            <label for="{{ student_form.is_low_income.id_for_label }}" data-i18n="field.is_low_income.label">{{ student_form.is_low_income.label }}</label>
-          </div>
+        <div>
+          <label for="id_division">Division / Section</label>
+          {{ student_form.division }}
+          {% if student_form.division.errors %}<p class="error">{{ student_form.division.errors.0 }}</p>{% endif %}
         </div>
-      </fieldset>
+      </div>
+    {% endif %}
+
+    <div class="row">
+      <div>
+        <label>{{ student_form.is_low_income.label }}</label>
+        {{ student_form.is_low_income }}
+        {% if student_form.is_low_income.errors %}<p class="error">{{ student_form.is_low_income.errors.0 }}</p>{% endif %}
+        <p class="hint">Used for program prioritization; does not affect growth calculations.</p>
+      </div>
+    </div>
+  </fieldset>
 
       <!--SECTION A -->
       <fieldset>
@@ -1968,51 +1977,38 @@
   </div>
 
   <script>
-    (function () {
-      var divisionsByGrade = {{ divisions_by_grade|safe }};
+    const divisionsByGrade = {{ divisions_by_grade|safe }};
+    var $grade = document.getElementById("id_grade");
+    var $division = document.getElementById("id_division");
 
-      var $grade = document.getElementById("id_grade");
-      var $division = document.getElementById("id_division");
+    function isSelect(el) {
+      return el && el.tagName && el.tagName.toUpperCase() === "SELECT";
+    }
 
-      function syncDivision() {
-        if (!$grade || !$division) return;
+    function syncDivision() {
+      if (!isSelect($grade) || !isSelect($division)) return;
 
-        var grade = $grade.value;
-        var divisions = divisionsByGrade[grade] || [];
+      var grade = $grade.value || "";
+      var divisions = divisionsByGrade[grade] || [];
 
-        var current = $division.value;
-        $division.innerHTML = "";
+      $division.innerHTML = "";
+      var placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Select division";
+      $division.appendChild(placeholder);
 
-        // Keep the placeholder from Django choices if present; else add one
-        var placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.text = (window.NUTRILIFT_I18N && window.NUTRILIFT_I18N.t)
-          ? window.NUTRILIFT_I18N.t("placeholder.select_division")
-          : "Select division";
+      divisions.forEach(function(d) {
+        var opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = d;
+        $division.appendChild(opt);
+      });
+    }
 
-        $division.add(placeholder);
-
-        divisions.forEach(function (d) {
-          var opt = document.createElement("option");
-          opt.value = d;
-          opt.text = d || "—";
-          $division.add(opt);
-        });
-
-        // attempt to restore selection
-        for (var i = 0; i < $division.options.length; i++) {
-          if ($division.options[i].value === current) {
-            $division.selectedIndex = i;
-            break;
-          }
-        }
-      }
-
-      if ($grade && $division) {
-        $grade.addEventListener("change", syncDivision);
-        syncDivision();
-      }
-    })();
+    if (isSelect($grade) && isSelect($division)) {
+      $grade.addEventListener("change", syncDivision);
+      syncDivision();
+    }
   </script>
   <script>
     (function () {

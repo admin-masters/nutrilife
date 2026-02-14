@@ -35,6 +35,9 @@ from .services import (
 )
 from .teacher_terms_content import DEFAULT_LANG, LANG_OPTIONS, TERMS_BY_LANG
 
+# Session key used to remember teacher's currently selected class/section (Classroom.id)
+TEACHER_SELECTED_CLASSROOM_SESSION_KEY = "sp_teacher_selected_classroom_id"
+
 User = get_user_model()
 
 
@@ -236,7 +239,7 @@ def teacher_onboarding(request: HttpRequest) -> HttpResponse:
     org = request.org  # set by the decorator/middleware
     guide_url = getattr(settings, "SCREENING_GUIDE_URL", "") or "#"
     training_url = getattr(settings, "SCREENING_TRAINING_VIDEO_URL", "") or "#"
-    continue_url = reverse("screening_only:teacher_dashboard")
+    continue_url = reverse("screening_only:teacher_class_selection")
 
     return render(
         request,
@@ -608,19 +611,97 @@ def admin_performance_dashboard(request: HttpRequest) -> HttpResponse:
         },
     )
 
+@require_screening_only_teacher
+def teacher_class_selection(request: HttpRequest) -> HttpResponse:
+    """
+    Mandatory class/section selection page for teachers (stores selection in session).
+    """
+    import json
+
+    org = request.org
+    classrooms_qs = Classroom.objects.filter(organization=org).order_by("grade", "division", "id")
+
+    # Build divisions-by-grade mapping (for dependent dropdown)
+    preferred_grade_order = ["Nursery", "K.G."] + [str(i) for i in range(1, 13)] + ["Other"]
+    grade_rank = {g: i for i, g in enumerate(preferred_grade_order)}
+
+    preferred_division_order = [chr(c) for c in range(ord("A"), ord("Z") + 1)] + ["Other"]
+    division_rank = {d: i for i, d in enumerate(preferred_division_order)}
+
+    divisions_by_grade = {}
+    for c in classrooms_qs:
+        g = c.grade or ""
+        d = c.division or ""
+        divisions_by_grade.setdefault(g, set()).add(d)
+
+    # Sorted grades + sorted divisions per grade
+    grades = sorted(divisions_by_grade.keys(), key=lambda g: (grade_rank.get(g, 999), str(g)))
+    divisions_by_grade_sorted = {}
+    for g in grades:
+        divs = sorted(list(divisions_by_grade[g]), key=lambda d: (division_rank.get(d, 999), str(d)))
+        divisions_by_grade_sorted[g] = divs
+
+    # Default selection from session (if any)
+    selected_grade = ""
+    selected_division = ""
+    selected_classroom_id = request.session.get(TEACHER_SELECTED_CLASSROOM_SESSION_KEY) or ""
+    if selected_classroom_id:
+        selected_classroom = classrooms_qs.filter(id=selected_classroom_id).first()
+        if selected_classroom:
+            selected_grade = selected_classroom.grade or ""
+            selected_division = selected_classroom.division or ""
+        else:
+            # stale/invalid stored selection
+            request.session.pop(TEACHER_SELECTED_CLASSROOM_SESSION_KEY, None)
+
+    if request.method == "POST":
+        grade = (request.POST.get("grade") or "").strip()
+        division = (request.POST.get("division") or "").strip()
+
+        classroom = Classroom.objects.filter(
+            organization=org,
+            grade=grade,
+            division=division,
+        ).first()
+
+        if not classroom:
+            messages.error(request, "Please select a valid Class and Section.")
+            selected_grade = grade
+            selected_division = division
+        else:
+            request.session[TEACHER_SELECTED_CLASSROOM_SESSION_KEY] = str(classroom.id)
+            return redirect("screening_only:teacher_dashboard")
+
+    return render(
+        request,
+        "screening_only/teacher_class_selection.html",
+        {
+            "org": org,
+            "grades": grades,
+            "divisions_by_grade": json.dumps(divisions_by_grade_sorted),
+            "selected_grade": selected_grade,
+            "selected_division": selected_division,
+        },
+    )
 
 @require_screening_only_teacher
 def teacher_dashboard(request: HttpRequest) -> HttpResponse:
     """
-    Teacher dashboard: choose language + class/division, see list of students (paged),
-    and screen new student / rescreen existing student:contentReference[oaicite:19]{index=19}.
+    Teacher dashboard: must have a selected class/section in session, then shows only those students.
     """
     org = request.org
     # Basic cycle concept: last 6 months
     cycle_start = timezone.now() - timedelta(days=183)
 
     classrooms = Classroom.objects.filter(organization=org).order_by("grade", "division")
-    classroom_id = request.GET.get("classroom") or ""
+
+    # NEW: enforce mandatory selection from session
+    classroom_id = request.session.get(TEACHER_SELECTED_CLASSROOM_SESSION_KEY) or ""
+    selected_classroom = classrooms.filter(id=classroom_id).first() if classroom_id else None
+    if not selected_classroom:
+        request.session.pop(TEACHER_SELECTED_CLASSROOM_SESSION_KEY, None)
+        return redirect("screening_only:teacher_class_selection")
+
     q = (request.GET.get("q") or "").strip()
     lang = (request.GET.get("lang") or "en").strip().lower()
 
@@ -630,8 +711,8 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         .select_related("classroom")
     )
 
-    if classroom_id:
-        students = students.filter(classroom_id=classroom_id)
+    # NEW: always filter by selected class/section
+    students = students.filter(classroom_id=selected_classroom.id)
 
     if q:
         students = students.filter(
@@ -656,13 +737,9 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
     for s in students:
         s.screening_url = reverse("screening_create", args=[s.id]) + f"?lang={lang}"
 
-    # NOTE: The actual screening form is handled by existing screening_create in screening/views.py as requested.
-    # We link to /screening/teacher/screen/<student_id>/?lang=<lang>
-    def screening_url(student_id: int) -> str:
-        return reverse("screening_create", args=[student_id]) + f"?lang={lang}"
-
     # Existing add-student flow (creates new Student + Screening) is in screening app.
-    add_student_url = reverse("teacher_add_student") + (f"?classroom={classroom_id}" if classroom_id else "")
+    # Keep passing classroom id so teacher_add_student can prefill class/section.
+    add_student_url = reverse("teacher_add_student") + f"?classroom={selected_classroom.id}"
 
     return render(
         request,
@@ -670,11 +747,11 @@ def teacher_dashboard(request: HttpRequest) -> HttpResponse:
         {
             "org": org,
             "classrooms": classrooms,
-            "selected_classroom_id": str(classroom_id),
+            "selected_classroom_id": str(selected_classroom.id),
+            "selected_classroom": selected_classroom,
             "q": q,
             "lang": lang,
             "students": students,
-            # "screening_url": screening_url,
             "add_student_url": add_student_url,
             "cycle_start": cycle_start,
         },

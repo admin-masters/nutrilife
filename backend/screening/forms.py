@@ -226,20 +226,42 @@ class NewScreeningForm(forms.ModelForm):
         return _normalize_phone_to_e164(self.cleaned_data.get("parent_phone_e164"))
 
     def clean_unique_student_id(self):
-        code = (self.cleaned_data.get("unique_student_id") or "").strip()
-        if not code:
-            raise ValidationError("Unique Student ID is required.")
-        if self.student:
-            qs = Student.objects.filter(
-                organization=self.student.organization,
-                student_code__iexact=code
-            ).exclude(pk=self.student.pk)
-            if qs.exists():
-                raise ValidationError("This Unique Student ID is already used by another student.")
+        student_id = (self.cleaned_data.get("unique_student_id") or "").strip()
+        if not student_id:
+            return student_id
+
+        # Enforce uniqueness ONLY within the class (Classroom).
+        target_classroom = None
+
+        # If we're screening an existing student, use that student's classroom
+        if self.student and getattr(self.student, "classroom_id", None):
+            target_classroom = self.student.classroom
         else:
-            if self.org and Student.objects.filter(organization=self.org, student_code__iexact=code).exists():
-                raise ValidationError("This Unique Student ID is already used by another student in your school.")
-        return code
+            # For "add student" flow, grade/division come from the AddStudentForm in the same POST
+            grade = (self.data.get("grade") or "").strip()
+            division = (self.data.get("division") or "").strip()
+            if grade and division:
+                target_classroom = Classroom.objects.filter(
+                    organization=self.org,
+                    grade=grade,
+                    division=division,
+                ).first()
+
+        qs = Student.objects.filter(organization=self.org, student_code__iexact=student_id)
+
+        # Only scope to classroom if we can resolve it
+        if target_classroom:
+            qs = qs.filter(classroom=target_classroom)
+
+        if self.student:
+            qs = qs.exclude(id=self.student.id)
+
+        if qs.exists():
+            raise forms.ValidationError(
+                "A student with this Roll Number already exists in the selected class."
+            )
+
+        return student_id
 
     def clean(self):
         data = super().clean()

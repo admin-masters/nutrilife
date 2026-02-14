@@ -66,7 +66,7 @@ class Student(TimeStampedModel):
 
     class Meta:
         unique_together = (
-            ("organization", "student_code"),
+            ("organization", "classroom", "student_code"),
             ("organization", "pid"),
         )
         indexes = [
