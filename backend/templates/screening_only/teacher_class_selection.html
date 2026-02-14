@@ -5,67 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Select Class and Section</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 0;
-      text-align: center;
-    }
-    .container {
-      width: 90%;
-      max-width: 520px;
-      margin: 40px auto;
-      background: white;
-      padding: 24px;
-      border-radius: 10px;
-      box-shadow: 0px 0px 10px rgba(0,0,0,0.08);
-    }
-    h1 { margin: 0 0 16px; }
-    .row { text-align: left; margin: 14px 0; }
-    label { display:block; font-weight: bold; margin-bottom: 6px; }
-    select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 16px;
-      background: #fff;
-    }
-    .btn {
-      margin-top: 18px;
-      display: inline-block;
-      padding: 12px 18px;
-      background: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .btn:hover { background: #0056b3; }
-    .messages { text-align:left; margin: 10px 0 0; }
-    .messages .error {
-      background: #ffe6e6;
-      border: 1px solid #ffb3b3;
-      padding: 10px;
-      border-radius: 6px;
-      color: #a40000;
-      margin-top: 10px;
-    }
+    body{
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
+  background: #fafafa;
+  color:#111;
+}
+
+/* Container becomes card style */
+.container{
+  max-width: 520px;
+  margin: 40px auto;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:24px;
+}
+
+/* Heading */
+h1{
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* Rows */
+.row{
+  margin:18px 0;
+}
+
+/* Labels */
+label{
+  display:block;
+  font-weight:600;
+  margin-bottom:6px;
+  font-size:14px;
+  color:#374151;
+}
+
+/* Select inputs */
+select{
+  width:100%;
+  padding:10px;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  font-size:14px;
+  background:#fff;
+}
+
+/* Button – same as add-btn */
+.btn{
+  margin-top:20px;
+  display:inline-block;
+  padding:12px 20px;
+  background:#000;
+  color:#fff;
+  border:1px solid #000;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+}
+
+.btn:hover{
+  opacity:.9;
+}
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Select Class and Section</h1>
-
-    {% if messages %}
-      <div class="messages">
-        {% for message in messages %}
-          <div class="error">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
 
     <form method="post">
       {% csrf_token %}

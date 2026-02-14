@@ -173,6 +173,9 @@
         <strong>Selected:</strong> Class {{ selected_classroom.grade }}{% if selected_classroom.division %} - {{ selected_classroom.division }}{% endif %}
       </p>
     {% endif %}
+    <a href="{% url 'screening_only:teacher_class_selection' %}" class="add-btn" style="float:right;">
+        Back to class selection
+    </a>
   </div>
 
 
@@ -180,9 +183,6 @@
   <div class="add-section">
     <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
         <a href="{{ add_student_url }}" class="add-btn">+ Add New Student for Screening</a>
-        <a href="{% url 'screening_only:teacher_class_selection' %}" class="add-btn" style="background:#6c757d;">
-          Back to class selection
-        </a>
     </div>
 
     <div class="helper-text">

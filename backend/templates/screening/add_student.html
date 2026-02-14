@@ -1402,8 +1402,8 @@
       {% endif %}
 
       <!-- CLASS DETAILS -->
-      <fieldset>
-  <legend>Class assignment</legend>
+    {% comment %} <fieldset>
+    <legend>Class assignment</legend>
 
     {% if student_form.initial.grade and student_form.initial.division %}
       {{ student_form.grade.as_hidden }}
@@ -1437,7 +1437,7 @@
         <p class="hint">Used for program prioritization; does not affect growth calculations.</p>
       </div>
     </div>
-  </fieldset>
+  </fieldset> {% endcomment %}
 
       <!--SECTION A -->
       <fieldset>
@@ -1484,6 +1484,12 @@
 
             {{ screening_form.parent_phone_e164 }}
             {% if screening_form.parent_phone_e164.errors %}<div class="errors">{{ screening_form.parent_phone_e164.errors }}</div>{% endif %}
+          </div>
+
+          <div>
+            <label>{{ student_form.is_low_income.label }}</label>
+              {{ student_form.is_low_income }}
+              {% if student_form.is_low_income.errors %}<p class="error">{{ student_form.is_low_income.errors.0 }}</p>{% endif %}
           </div>
         </div>
       </fieldset>
