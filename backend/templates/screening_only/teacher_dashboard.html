@@ -159,6 +159,29 @@
       color:#666;
       text-align:center;
     }
+    .page-header{
+  margin-bottom: 24px;
+  position: relative;   /* important */
+}
+
+.back-btn{
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 8px;
+
+  background: #000;
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid #000;
+}
+
+.back-btn:hover{
+  opacity: .9;
+}
   </style>
 </head>
 
@@ -172,7 +195,7 @@
         <strong>Selected:</strong> Class {{ selected_classroom.grade }}{% if selected_classroom.division %} - {{ selected_classroom.division }}{% endif %}
       </p>
     {% endif %}
-    <a href="{% url 'screening_only:teacher_class_selection' %}" class="add-btn" style="float:right;">
+    <a href="{% url 'screening_only:teacher_class_selection' %}" class="back-btn">
         Back to class selection
     </a>
   </div>
