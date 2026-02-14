@@ -1486,7 +1486,7 @@
             {% if screening_form.parent_phone_e164.errors %}<div class="errors">{{ screening_form.parent_phone_e164.errors }}</div>{% endif %}
           </div>
 
-          <div class="field radio">
+          <div class="field radio" data-i18n="field.is_low_income.label">
             <label>{{ student_form.is_low_income.label }}</label>
             {{ student_form.is_low_income }}
             {% if student_form.is_low_income.errors %}
