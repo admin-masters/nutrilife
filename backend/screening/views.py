@@ -30,13 +30,21 @@ from django.http import HttpResponse
 import json as _json
 
 def teacher_portal_token(request, token: str):
-    try:
-            org.screening_only_profile
-            return redirect(reverse("screening_only:teacher_access_portal", args=[org.screening_link_token]))
-    except Exception:
-            pass
-
+    # First, resolve the organization from the slug token
     org = get_object_or_404(Organization, screening_link_token=token)
+
+    # If this is a Screening Program school, send them into the screening_only teacher flow
+    try:
+        # Will raise if no screening_only_profile
+        _ = org.screening_only_profile
+        return redirect(
+            reverse("screening_only:teacher_access_portal", args=[org.screening_link_token])
+        )
+    except Exception:
+        # Not a Screening Program school → fall back to legacy teacher portal
+        pass
+
+    # Legacy / non-screening-only org: use the standard teacher portal
     request.session["public_teacher_org_id"] = org.id
     request.org = org
     if request.user.is_authenticated:

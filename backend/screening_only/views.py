@@ -266,6 +266,34 @@ def google_oauth_start(request: HttpRequest) -> HttpResponse:
     url = build_authorization_url(client_id=client_id, redirect_uri=redirect_uri, state=state)
     return redirect(url)
 
+def _redirect_teacher_or_enroll(request):
+    """
+    If a teacher is already logged in and we know their org, redirect them
+    to the teacher login URL with slug (screening teacher portal).
+    Otherwise, fall back to the enrollment page.
+    """
+    user = getattr(request, "user", None)
+    if getattr(user, "is_authenticated", False):
+        org_id = request.session.get("current_org_id")
+        if org_id:
+            # Ensure this user is a TEACHER (not only admin) for this org
+            has_teacher_role = OrgMembership.objects.filter(
+                user=user,
+                organization_id=org_id,
+                role=Role.TEACHER,
+                is_active=True,
+            ).exists()
+            if has_teacher_role:
+                try:
+                    org = Organization.objects.get(id=org_id)
+                    # This name is from backend/screening/urls.py
+                    teacher_url = reverse("teacher_portal_token", args=[org.screening_link_token])
+                    return redirect(teacher_url)
+                except Organization.DoesNotExist:
+                    pass
+
+    # Fallback: original behavior
+    return redirect("screening_only:enroll_school")
 
 def google_oauth_callback(request: HttpRequest) -> HttpResponse:
     client_id = getattr(settings, "GOOGLE_OAUTH_CLIENT_ID", None) or ""
@@ -280,7 +308,7 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
 
     if not code or not state or state != expected_state:
         messages.error(request, "Invalid login session. Please try again.")
-        return redirect("screening_only:enroll_school")
+        return _redirect_teacher_or_enroll(request)
 
     role = request.session.get("sp_oauth_role")
     
@@ -290,7 +318,7 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         org_id = request.session.get("sp_oauth_org_id")
         if not role or not org_id:
             messages.error(request, "Login session expired. Please start again.")
-            return redirect("screening_only:enroll_school")
+            return _redirect_teacher_or_enroll(request)
         org = get_object_or_404(Organization, id=org_id)
     
     redirect_uri = request.build_absolute_uri(reverse("screening_only:google_oauth_callback"))
@@ -299,8 +327,8 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         id_token = exchange_code_for_id_token(code=code, client_id=client_id, client_secret=client_secret, redirect_uri=redirect_uri)
         token_info = verify_id_token_and_get_email(id_token=id_token, client_id=client_id)
     except GoogleOAuthError as e:
-        messages.error(request, f"Google sign-in failed: {e}")
-        return redirect("screening_only:enroll_school")
+            messages.error(request, f"Google sign-in failed: {e}")
+            return _redirect_teacher_or_enroll(request)
 
     email = (token_info.get("email") or "").strip().lower()
 
@@ -382,8 +410,7 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         request.session["current_org_id"] = org.id
 
         # clear oauth session
-        # for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id"]:
-        for k in ["sp_oauth_state"]:    
+        for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id"]:   
             request.session.pop(k, None)
           # Auto-accept terms and mark onboarding as completed
         if not _is_terms_accepted(user, org, ScreeningTermsAcceptance.ActorRole.ORG_ADMIN):
@@ -489,14 +516,14 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
             )
 
         # clear oauth session
-        for k in ["sp_oauth_state"]:
+        for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id", "sp_teacher_email", "sp_teacher_full_name", "sp_teacher_terms_ok"]:
             request.session.pop(k, None)
 
         return redirect("screening_only:teacher_onboarding")      
         
 
     messages.error(request, "Unknown login flow.")
-    return redirect("screening_only:enroll_school")
+    return _redirect_teacher_or_enroll(request)
 
 
 def _get_ip(request: HttpRequest) -> Optional[str]:
