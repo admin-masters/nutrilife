@@ -382,7 +382,8 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
         request.session["current_org_id"] = org.id
 
         # clear oauth session
-        for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id"]:
+        # for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id"]:
+        for k in ["sp_oauth_state"]:    
             request.session.pop(k, None)
           # Auto-accept terms and mark onboarding as completed
         if not _is_terms_accepted(user, org, ScreeningTermsAcceptance.ActorRole.ORG_ADMIN):
