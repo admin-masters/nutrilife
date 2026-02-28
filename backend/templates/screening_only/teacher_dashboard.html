@@ -207,9 +207,9 @@
         <a href="{{ add_student_url }}" class="add-btn">+ Add New Student for Screening</a>
     </div>
 
-    <div class="helper-text">
+    {% comment %} <div class="helper-text">
       To update screening for a student, click on the roll number.
-    </div>
+    </div> {% endcomment %}
   </div>
 
 
@@ -236,7 +236,7 @@
           <tr>
     
             <!-- Clickable Name -->
-            <td>
+            {% comment %} <td>
               <a href="{{ s.screening_url }}"
                  style="
                    color:#111;
@@ -249,7 +249,7 @@
                  {{ s.student_code|default:"—" }}
     
               </a>
-            </td>
+            </td> {% endcomment %}
     
             <!-- Class -->
             <td>
