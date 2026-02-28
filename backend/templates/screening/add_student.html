@@ -1401,43 +1401,38 @@
         <div class="nonfield">{{ screening_form.non_field_errors }}</div>
       {% endif %}
 
-      <!-- CLASS DETAILS -->
-    {% comment %} <fieldset>
-    <legend>Class assignment</legend>
-
-    {% if student_form.initial.grade and student_form.initial.division %}
-      {{ student_form.grade.as_hidden }}
-      {{ student_form.division.as_hidden }}
-
-      <p style="margin: 0 0 10px; color: #444;">
-        <strong>Class &amp; Section:</strong>
-        {{ student_form.initial.grade }} - {{ student_form.initial.division }}
-      </p>
-    {% else %}
-      <div class="row">
-        <div>
-          <label for="id_grade">Grade / Class</label>
-          {{ student_form.grade }}
-          {% if student_form.grade.errors %}<p class="error">{{ student_form.grade.errors.0 }}</p>{% endif %}
-        </div>
-
-        <div>
-          <label for="id_division">Division / Section</label>
-          {{ student_form.division }}
-          {% if student_form.division.errors %}<p class="error">{{ student_form.division.errors.0 }}</p>{% endif %}
-        </div>
-      </div>
-    {% endif %}
-
-    <div class="row">
-      <div>
-        <label>{{ student_form.is_low_income.label }}</label>
-        {{ student_form.is_low_income }}
-        {% if student_form.is_low_income.errors %}<p class="error">{{ student_form.is_low_income.errors.0 }}</p>{% endif %}
-        <p class="hint">Used for program prioritization; does not affect growth calculations.</p>
-      </div>
-    </div>
-  </fieldset> {% endcomment %}
+            <!-- CLASS DETAILS -->
+            <fieldset>
+              <legend data-i18n="legend.class_assignment">School / Class / Section</legend>
+      
+              {% if student_form.initial.grade and student_form.initial.division %}
+                {{ student_form.grade.as_hidden }}
+                {{ student_form.division.as_hidden }}
+      
+                <p style="margin: 0 0 10px; color: #444;">
+                  <strong>Class &amp; Section:</strong>
+                  {{ student_form.initial.grade }} - {{ student_form.initial.division }}
+                </p>
+              {% else %}
+                <div class="row">
+                  <div>
+                    <label for="id_grade" data-i18n="field.grade.label">Class</label>
+                    {{ student_form.grade }}
+                    {% if student_form.grade.errors %}
+                      <p class="error">{{ student_form.grade.errors.0 }}</p>
+                    {% endif %}
+                  </div>
+      
+                  <div>
+                    <label for="id_division" data-i18n="field.division.label">Section</label>
+                    {{ student_form.division }}
+                    {% if student_form.division.errors %}
+                      <p class="error">{{ student_form.division.errors.0 }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endif %}
+            </fieldset>
 
       <!--SECTION A -->
       <fieldset>

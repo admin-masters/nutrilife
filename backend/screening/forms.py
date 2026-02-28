@@ -386,7 +386,7 @@ class AddStudentForm(forms.Form):
 
         # Prefer a natural grade ordering for dropdown UX:
         # Nursery, 1..12, Other, then any non-standard values.
-        preferred_grade_order = ["Nursery" "K.G."] + [str(i) for i in range(1, 13)] + ["Other"]
+        preferred_grade_order = ["Nursery", "K.G."] + [str(i) for i in range(1, 13)] + ["Other"]
         grade_rank = {g: i for i, g in enumerate(preferred_grade_order)}
 
         grades = list(
