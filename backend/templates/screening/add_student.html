@@ -1073,19 +1073,24 @@
   }
 
   function safeGetLang() {
-    // 1) dropdown (if already set)
-    var sel = document.getElementById("language-select");
-    if (sel && sel.value) return _normalizeLang(sel.value);
+    // 1) URL param ?lang=xx should override everything (you already support it later)
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var qLang = (params.get("lang") || "").toLowerCase();
+      if (qLang) return _normalizeLang(qLang);
+    } catch (e) {}
 
-    // 2) localStorage (device-level persistence)
+    // 2) localStorage (device-level persistence) MUST be checked before dropdown default
     try {
       var saved = window.localStorage && window.localStorage.getItem(STORAGE_KEY);
       if (saved) return _normalizeLang(saved);
-    } catch (e) {
-      // ignore storage failures (private mode, blocked storage, etc.)
-    }
+    } catch (e) {}
 
-    // 3) default
+    // 3) dropdown fallback
+    var sel = document.getElementById("language-select");
+    if (sel && sel.value) return _normalizeLang(sel.value);
+
+    // 4) default
     return DEFAULT_LANG;
   }
 
@@ -1299,6 +1304,8 @@
     const sel = document.getElementById("language-select");
     const current = safeGetLang();
 
+    safeSetLang(current); // <- add this
+
     if (sel) {
       sel.value = current;
       sel.addEventListener("change", function () {
@@ -1403,7 +1410,7 @@
       <div class="lang-label" data-i18n="ui.language.label">Language</div>
       <select id="language-select" aria-label="Language">
         <option value="en">English</option>
-        <option value="mr" selected>मराठी</option>
+        <option value="mr">मराठी</option>
         <option value="hi">हिन्दी</option>
         <option value="te">తెలుగు</option>
         <option value="ta">தமிழ்</option>
