@@ -290,7 +290,7 @@ class NewScreeningForm(forms.ModelForm):
         if not student_id:
             return student_id
 
-        # Enforce uniqueness ONLY within the class (Classroom).
+        # Enforce uniqueness ONLY within the class+division (Classroom).
         target_classroom = None
 
         # If we're screening an existing student, use that student's classroom
@@ -299,26 +299,33 @@ class NewScreeningForm(forms.ModelForm):
         else:
             # For "add student" flow, grade/division come from the AddStudentForm in the same POST
             grade = (self.data.get("grade") or "").strip()
-            division = (self.data.get("division") or "").strip()
-            if grade and division:
-                target_classroom = Classroom.objects.filter(
-                    organization=self.org,
-                    grade=grade,
-                    division=division,
-                ).first()
+            division = (self.data.get("division") or "").strip()  # allow blank division as valid
 
-        qs = Student.objects.filter(organization=self.org, student_code__iexact=student_id)
+            if not grade:
+                raise forms.ValidationError("Please select Class and Section before entering Roll Number.")
 
-        # Only scope to classroom if we can resolve it
-        if target_classroom:
-            qs = qs.filter(classroom=target_classroom)
+            # IMPORTANT: resolve classroom even if division == ""
+            target_classroom = Classroom.objects.filter(
+                organization=self.org,
+                grade=grade,
+                division=division,
+            ).first()
+
+        if not target_classroom:
+            raise forms.ValidationError("Selected Class/Section is invalid. Please re-select Class and Section.")
+
+        qs = Student.objects.filter(
+            organization=self.org,
+            classroom=target_classroom,
+            student_code__iexact=student_id,
+        )
 
         if self.student:
             qs = qs.exclude(id=self.student.id)
 
         if qs.exists():
             raise forms.ValidationError(
-                "A student with this Roll Number already exists in the selected class."
+                "A student with this Roll Number already exists in the selected class and section."
             )
 
         return student_id

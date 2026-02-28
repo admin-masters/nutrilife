@@ -65,10 +65,16 @@ class Student(TimeStampedModel):
     notes = models.TextField(blank=True)
 
     class Meta:
-        unique_together = (
-            ("organization", "classroom", "student_code"),
-            ("organization", "pid"),
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "classroom", "student_code"],
+                name="uniq_student_roll_per_class_div",
+            ),
+            models.UniqueConstraint(
+                fields=["organization", "pid"],
+                name="uniq_student_pid_per_org",
+            ),
+        ]
         indexes = [
             models.Index(fields=["organization", "pid"]),
             models.Index(fields=["organization", "last_name", "first_name"]),
