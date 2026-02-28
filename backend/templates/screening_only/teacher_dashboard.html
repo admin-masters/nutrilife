@@ -236,20 +236,9 @@
           <tr>
     
             <!-- Clickable Name -->
-            {% comment %} <td>
-              <a href="{{ s.screening_url }}"
-                 style="
-                   color:#111;
-                   text-decoration:none;
-                   font-weight:500;
-                 "
-                 onmouseover="this.style.textDecoration='underline'"
-                 onmouseout="this.style.textDecoration='none'">
-    
-                 {{ s.student_code|default:"—" }}
-    
-              </a>
-            </td> {% endcomment %}
+            <td>    
+              {{ s.student_code|default:"—" }}
+            </td>
     
             <!-- Class -->
             <td>
