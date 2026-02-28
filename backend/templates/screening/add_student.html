@@ -1522,209 +1522,180 @@
       </fieldset>
 
 
-      <!-- SECTION C -->
-      <fieldset>
-        <legend data-i18n="legend.section_c">Section C: Quick Health Red Flags</legend>
-
-
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_general_poor.id_for_label }}" data-i18n="field.health_general_poor.label">{{ screening_form.health_general_poor.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_general_poor">Ask the child- Do you feel healthy?</div>
-
-
-        <div style="display:none;">
-          {{ screening_form.health_general_poor }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_general_poor.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_general_poor.errors %}<div class="errors">{{ screening_form.health_general_poor.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_pallor.id_for_label }}" data-i18n="field.health_pallor.label">{{ screening_form.health_pallor.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_pallor">Ask the child- Does the child have pallor?</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_pallor }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_pallor.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_pallor.errors %}<div class="errors">{{ screening_form.health_pallor.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_fatigue_dizzy_faint.id_for_label }}" data-i18n="field.health_fatigue_dizzy_faint.label">{{ screening_form.health_fatigue_dizzy_faint.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_fatigue_dizzy_faint">Ask the child- If they remember having fainted while doing normal work/play, or if the child feels very too tired to do routine work/play?</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_fatigue_dizzy_faint }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_fatigue_dizzy_faint.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_fatigue_dizzy_faint.errors %}<div class="errors">{{ screening_form.health_fatigue_dizzy_faint.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_breathlessness.id_for_label }}" data-i18n="field.health_breathlessness.label">{{ screening_form.health_breathlessness.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_breathlessness">Ask the child- If they feel breathless on doing routine activities or while walking normally?</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_breathlessness }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_breathlessness.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_breathlessness.errors %}<div class="errors">{{ screening_form.health_breathlessness.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_frequent_infections.id_for_label }}" data-i18n="field.health_frequent_infections.label">{{ screening_form.health_frequent_infections.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_frequent_infections">Ask the child- Does the child fall sick very often? Has been ill 3 times or more in the last month?</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_frequent_infections }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_frequent_infections.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_frequent_infections.errors %}<div class="errors">{{ screening_form.health_frequent_infections.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_chronic_cough_or_diarrhea.id_for_label }}" data-i18n="field.health_chronic_cough_or_diarrhea.label">{{ screening_form.health_chronic_cough_or_diarrhea.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_chronic_cough_or_diarrhea">Ask the child- Does the child have cough and has had it for last 4 weeks or more, or does the child have loose motions and it has lasted more than 2 weeks?</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_chronic_cough_or_diarrhea }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_chronic_cough_or_diarrhea.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_chronic_cough_or_diarrhea.errors %}<div class="errors">{{ screening_form.health_chronic_cough_or_diarrhea.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_visible_worms.id_for_label }}" data-i18n="field.health_visible_worms.label">{{ screening_form.health_visible_worms.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_visible_worms">Ask the child- If they have ever seen small worms in their stool.</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_visible_worms }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_visible_worms.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_visible_worms.errors %}<div class="errors">{{ screening_form.health_visible_worms.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_dental_or_gum_or_ulcers.id_for_label }}" data-i18n="field.health_dental_or_gum_or_ulcers.label">{{ screening_form.health_dental_or_gum_or_ulcers.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_dental_or_gum_or_ulcers">Ask the child- If they have teeth pain, gum bleeding or mouth ulcers?</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_dental_or_gum_or_ulcers }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_dental_or_gum_or_ulcers.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_dental_or_gum_or_ulcers.errors %}<div class="errors">{{ screening_form.health_dental_or_gum_or_ulcers.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_night_vision_difficulty.id_for_label }}" data-i18n="field.health_night_vision_difficulty.label">{{ screening_form.health_night_vision_difficulty.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_night_vision_difficulty">Ask the child- If they stumble while walking in the dark since they can't see properly</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_night_vision_difficulty }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_night_vision_difficulty.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_night_vision_difficulty.errors %}<div class="errors">{{ screening_form.health_night_vision_difficulty.errors }}</div>{% endif %}
-      </div>
-
-      <div class="qrow">
-        <div class="qtitle">
-          <label for="{{ screening_form.health_bone_or_joint_pain.id_for_label }}" data-i18n="field.health_bone_or_joint_pain.label">{{ screening_form.health_bone_or_joint_pain.label }}</label>
-        </div>
-        <div class="ask-child" data-i18n="ask.health_bone_or_joint_pain">Ask the child- If they have pain in their arms/legs/joints, although they haven't been hurt and even without hard work/play?</div>
-
-        <div style="display:none;">
-          {{ screening_form.health_bone_or_joint_pain }}
-        </div>
-
-        <select class="yn-proxy" data-checkbox-id="{{ screening_form.health_bone_or_joint_pain.id_for_label }}">
-          <option value="">Select</option>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        {% if screening_form.health_bone_or_joint_pain.errors %}<div class="errors">{{ screening_form.health_bone_or_joint_pain.errors }}</div>{% endif %}
-      </div>
-
-
-      <div class="field radio" style="margin-top: 12px;">
-        <label for="{{ screening_form.appetite.id_for_label }}" data-i18n="field.appetite.label">{{ screening_form.appetite.label }}</label>
-        {{ screening_form.appetite }}
-        {% if screening_form.appetite.errors %}<div class="errors">{{ screening_form.appetite.errors }}</div>{% endif %}
-      </div>
+            <!-- SECTION C -->
+            <fieldset>
+              <legend data-i18n="legend.section_c">Section C: Quick Health Red Flags</legend>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_general_poor.id_for_label }}" data-i18n="field.health_general_poor.label">
+                    {{ screening_form.health_general_poor.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_general_poor">
+                  Ask the child- Do you feel healthy?
+                </div>
+      
+                {{ screening_form.health_general_poor }}
+                {% if screening_form.health_general_poor.errors %}
+                  <div class="errors">{{ screening_form.health_general_poor.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_pallor.id_for_label }}" data-i18n="field.health_pallor.label">
+                    {{ screening_form.health_pallor.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_pallor">
+                  Ask the child- Does the child have pallor?
+                </div>
+      
+                {{ screening_form.health_pallor }}
+                {% if screening_form.health_pallor.errors %}
+                  <div class="errors">{{ screening_form.health_pallor.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_fatigue_dizzy_faint.id_for_label }}" data-i18n="field.health_fatigue_dizzy_faint.label">
+                    {{ screening_form.health_fatigue_dizzy_faint.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_fatigue_dizzy_faint">
+                  Ask the child- If they remember having fainted while doing normal work/play, or if the child feels very too tired to do routine work/play?
+                </div>
+      
+                {{ screening_form.health_fatigue_dizzy_faint }}
+                {% if screening_form.health_fatigue_dizzy_faint.errors %}
+                  <div class="errors">{{ screening_form.health_fatigue_dizzy_faint.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_breathlessness.id_for_label }}" data-i18n="field.health_breathlessness.label">
+                    {{ screening_form.health_breathlessness.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_breathlessness">
+                  Ask the child- If they feel breathless on doing routine activities or while walking normally?
+                </div>
+      
+                {{ screening_form.health_breathlessness }}
+                {% if screening_form.health_breathlessness.errors %}
+                  <div class="errors">{{ screening_form.health_breathlessness.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_frequent_infections.id_for_label }}" data-i18n="field.health_frequent_infections.label">
+                    {{ screening_form.health_frequent_infections.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_frequent_infections">
+                  Ask the child- Does the child fall sick very often? Has been ill 3 times or more in the last month?
+                </div>
+      
+                {{ screening_form.health_frequent_infections }}
+                {% if screening_form.health_frequent_infections.errors %}
+                  <div class="errors">{{ screening_form.health_frequent_infections.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_chronic_cough_or_diarrhea.id_for_label }}" data-i18n="field.health_chronic_cough_or_diarrhea.label">
+                    {{ screening_form.health_chronic_cough_or_diarrhea.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_chronic_cough_or_diarrhea">
+                  Ask the child- Does the child have cough and has had it for last 4 weeks or more, or does the child have loose motions and it has lasted more than 2 weeks?
+                </div>
+      
+                {{ screening_form.health_chronic_cough_or_diarrhea }}
+                {% if screening_form.health_chronic_cough_or_diarrhea.errors %}
+                  <div class="errors">{{ screening_form.health_chronic_cough_or_diarrhea.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_visible_worms.id_for_label }}" data-i18n="field.health_visible_worms.label">
+                    {{ screening_form.health_visible_worms.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_visible_worms">
+                  Ask the child- If they have ever seen small worms in their stool.
+                </div>
+      
+                {{ screening_form.health_visible_worms }}
+                {% if screening_form.health_visible_worms.errors %}
+                  <div class="errors">{{ screening_form.health_visible_worms.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_dental_or_gum_or_ulcers.id_for_label }}" data-i18n="field.health_dental_or_gum_or_ulcers.label">
+                    {{ screening_form.health_dental_or_gum_or_ulcers.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_dental_or_gum_or_ulcers">
+                  Ask the child- If they have teeth pain, gum bleeding or mouth ulcers?
+                </div>
+      
+                {{ screening_form.health_dental_or_gum_or_ulcers }}
+                {% if screening_form.health_dental_or_gum_or_ulcers.errors %}
+                  <div class="errors">{{ screening_form.health_dental_or_gum_or_ulcers.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_night_vision_difficulty.id_for_label }}" data-i18n="field.health_night_vision_difficulty.label">
+                    {{ screening_form.health_night_vision_difficulty.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_night_vision_difficulty">
+                  Ask the child- If they stumble while walking in the dark since they can't see properly
+                </div>
+      
+                {{ screening_form.health_night_vision_difficulty }}
+                {% if screening_form.health_night_vision_difficulty.errors %}
+                  <div class="errors">{{ screening_form.health_night_vision_difficulty.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="qrow">
+                <div class="qtitle">
+                  <label for="{{ screening_form.health_bone_or_joint_pain.id_for_label }}" data-i18n="field.health_bone_or_joint_pain.label">
+                    {{ screening_form.health_bone_or_joint_pain.label }}
+                  </label>
+                </div>
+                <div class="ask-child" data-i18n="ask.health_bone_or_joint_pain">
+                  Ask the child- If they have pain in their arms/legs/joints, although they haven't been hurt and even without hard work/play?
+                </div>
+      
+                {{ screening_form.health_bone_or_joint_pain }}
+                {% if screening_form.health_bone_or_joint_pain.errors %}
+                  <div class="errors">{{ screening_form.health_bone_or_joint_pain.errors }}</div>
+                {% endif %}
+              </div>
+      
+              <div class="field radio" style="margin-top: 12px;">
+                <label for="{{ screening_form.appetite.id_for_label }}" data-i18n="field.appetite.label">
+                  {{ screening_form.appetite.label }}
+                </label>
+                {{ screening_form.appetite }}
+                {% if screening_form.appetite.errors %}
+                  <div class="errors">{{ screening_form.appetite.errors }}</div>
+                {% endif %}
+              </div>
+            </fieldset>
 
 
       <fieldset id="girls-only-section" style="margin-top: 12px;">

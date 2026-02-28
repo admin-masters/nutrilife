@@ -90,17 +90,77 @@ class NewScreeningForm(forms.ModelForm):
     )
 
 
-    # SECTION C
-    health_general_poor = forms.BooleanField(label="General health is poor", required=False)
-    health_pallor = forms.BooleanField(label="Pallor (pale inside eyelids/palms)", required=False)
-    health_fatigue_dizzy_faint = forms.BooleanField(label="Fatigue, dizziness, or fainting", required=False)
-    health_breathlessness = forms.BooleanField(label="Breathlessness on exertion", required=False)
-    health_frequent_infections = forms.BooleanField(label="Frequent infections (3 or more in last month)", required=False)
-    health_chronic_cough_or_diarrhea = forms.BooleanField(label="Chronic cough or chronic diarrhea", required=False)
-    health_visible_worms = forms.BooleanField(label="Visible worm passage", required=False)
-    health_dental_or_gum_or_ulcers = forms.BooleanField(label="Dental caries, gum bleeding, or mouth ulcers", required=False)
-    health_night_vision_difficulty = forms.BooleanField(label="Night vision difficulty (stumbling in dim light)", required=False)
-    health_bone_or_joint_pain = forms.BooleanField(label="Bone or joint pains", required=False)
+        # SECTION C - Quick Health Red Flags (bound yes/no selects)
+    health_general_poor = forms.TypedChoiceField(
+        label="General health is poor",
+        choices=_BOOL_SELECT_CHOICES,   # ("", "Select"), ("yes","Yes"), ("no","No")
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_pallor = forms.TypedChoiceField(
+        label="Pallor (pale inside eyelids/palms)",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_fatigue_dizzy_faint = forms.TypedChoiceField(
+        label="Fatigue, dizziness, or fainting",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_breathlessness = forms.TypedChoiceField(
+        label="Breathlessness on exertion",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_frequent_infections = forms.TypedChoiceField(
+        label="Frequent infections (3 or more in last month)",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_chronic_cough_or_diarrhea = forms.TypedChoiceField(
+        label="Chronic cough or chronic diarrhea",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_visible_worms = forms.TypedChoiceField(
+        label="Visible worm passage",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_dental_or_gum_or_ulcers = forms.TypedChoiceField(
+        label="Dental caries, gum bleeding, or mouth ulcers",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_night_vision_difficulty = forms.TypedChoiceField(
+        label="Night vision difficulty (stumbling in dim light)",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
+    health_bone_or_joint_pain = forms.TypedChoiceField(
+        label="Bone or joint pains",
+        choices=_BOOL_SELECT_CHOICES,
+        coerce=_coerce_bool,
+        required=False,
+        widget=forms.Select(attrs={"class": "yn-proxy"}),
+    )
 
     appetite = YesNoField("Does the child not feel like eating and never feels hungry?")
 
