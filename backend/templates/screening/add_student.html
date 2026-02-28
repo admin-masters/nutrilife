@@ -1064,14 +1064,38 @@
     -------------------------------------------------------------------------------- */
   };
 
-  function safeGetLang() {
-    var sel = document.getElementById("language-select");
-    return sel && sel.value ? sel.value : "en";
+  function _normalizeLang(lang) {
+    lang = (lang || "").toString().trim().toLowerCase();
+    if (!lang) return DEFAULT_LANG;
+    // tolerate hi-IN etc
+    if (lang.indexOf("-") !== -1) lang = lang.split("-", 1)[0];
+    return SUPPORTED.indexOf(lang) >= 0 ? lang : DEFAULT_LANG;
   }
-  
+
+  function safeGetLang() {
+    // 1) dropdown (if already set)
+    var sel = document.getElementById("language-select");
+    if (sel && sel.value) return _normalizeLang(sel.value);
+
+    // 2) localStorage (device-level persistence)
+    try {
+      var saved = window.localStorage && window.localStorage.getItem(STORAGE_KEY);
+      if (saved) return _normalizeLang(saved);
+    } catch (e) {
+      // ignore storage failures (private mode, blocked storage, etc.)
+    }
+
+    // 3) default
+    return DEFAULT_LANG;
+  }
 
   function safeSetLang(lang) {
-    // Disabled: do not save language
+    var v = _normalizeLang(lang);
+    try {
+      if (window.localStorage) window.localStorage.setItem(STORAGE_KEY, v);
+    } catch (e) {
+      // ignore
+    }
   }
 
   function t(key, langOverride) {
