@@ -488,7 +488,8 @@ def google_oauth_callback(request: HttpRequest) -> HttpResponse:
             )
 
         # clear oauth session
-        for k in ["sp_teacher_full_name", "sp_teacher_terms_ok"]:
+                # clear oauth session
+        for k in ["sp_oauth_state", "sp_oauth_role", "sp_oauth_org_id", "sp_teacher_email", "sp_teacher_full_name", "sp_teacher_terms_ok"]:
             request.session.pop(k, None)
 
         return redirect("screening_only:teacher_onboarding")      
